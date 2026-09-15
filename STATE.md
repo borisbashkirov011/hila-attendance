@@ -14,7 +14,7 @@ Entire UI is Hebrew / RTL (`<html lang="he" dir="rtl">` in `src/app/layout.tsx`)
 - `/` — Dashboard (`src/app/page.tsx`): boutique-styled greeting ("היי הילה ✨"), `FinancialSummaryCards` (current + next month by `expected_payment_date`, now with employee/freelance income split bar + hours/avg-hourly-rate pills), `UpcomingShifts`, `QuickAddModal` FAB.
 - `/schedule` — Shift calendar (`src/app/schedule/page.tsx` + `CalendarClient.tsx`): month grid. Clicking **any** day (empty or not) opens a Daily Summary modal listing that day's shifts with edit (✏️) / delete (🗑️) buttons and an "הוספת משמרת" button that opens `LogSessionForm` pre-filled with the date. `LogSessionForm` now supports both add and edit mode (`existingLog` prop switches it to `updateWorkLogAction`). `WorkLogEditModal.tsx` was deleted (superseded, confirmed orphaned).
 - `/settings` — `IncomeSourceManager` CRUD, plus a new pastel card with `CalendarSyncButton` ("הוספת משמרות ליומן באייפון") + helper text explaining the one-time iPhone Calendar sync.
-- `/taxes` — Tax/social breakdown page, unchanged this session.
+- `/taxes` — Tax/social breakdown page (`src/app/taxes/page.tsx`): now defaults to **next month** (was current), and the toggle is 3-way (`?month=current|next|two_ahead`) via `MONTH_OPTIONS`/`MONTH_OFFSETS`, each option showing its own Hebrew month+year label under the button text.
 - `/api/calendar/feed` (`route.ts`) — **new**: public GET endpoint emitting a valid RFC 5545 `.ics` feed of all `work_logs` (all-day VEVENTs, folded lines, `text/calendar` content-type, `Cache-Control: public, max-age=1800`). No auth — anyone with the URL can read shift data; user hasn't flagged this as a concern yet but worth surfacing if data becomes sensitive.
 
 ## Design system (established across several sessions this cycle)
@@ -30,11 +30,12 @@ Entire UI is Hebrew / RTL (`<html lang="he" dir="rtl">` in `src/app/layout.tsx`)
 
 - `src/lib/actions/work-logs.ts` — `logWorkSessionAction`, `updateWorkLogAction`, `deleteWorkLogAction`, shared `computeWorkLogFields()`. Revalidates `/` and `/schedule`.
 - `src/lib/actions/income-sources.ts` — CRUD + soft-delete, unchanged.
-- `src/lib/utils/payment-dates.ts`, `payment-terms.ts`, `shift-status.ts`, `calendar.ts`, `tax-calculations.ts`, `format.ts` — unchanged; see prior session notes if needed, logic not touched recently.
+- `src/lib/utils/payment-dates.ts`, `payment-terms.ts`, `shift-status.ts`, `calendar.ts`, `tax-calculations.ts` — unchanged; see prior session notes if needed, logic not touched recently.
+- `src/lib/utils/format.ts` — `formatDate` switched from `en-GB` (English "12 Oct 2026") to `he-IL` long-month format (Hebrew "12 באוקטובר 2026"). Feeds `UpcomingShifts` and the calendar daily-summary modal automatically — no other callers needed changes.
 - `src/lib/types/work-log.ts`, `income-source.ts` — shared types, unchanged.
 - `src/components/CalendarSyncButton.tsx` — **new**: client button, opens `webcal://` link directly on iOS (detected via UA sniff), otherwise copies the `https://…/api/calendar/feed` URL to clipboard with a small toast.
 - `src/components/LogSessionForm.tsx` — now dual-purpose (add/edit), used both standalone (`QuickAddModal`) and inside `CalendarClient`'s daily-summary flow.
-- `src/components/FinancialSummaryCards.tsx`, `UpcomingShifts.tsx`, `CalendarClient.tsx`, `NavBar.tsx` — all restyled this session per the design system above; logic mostly unchanged aside from the new income-split/hours calc in the dashboard cards.
+- `src/components/FinancialSummaryCards.tsx`, `UpcomingShifts.tsx`, `CalendarClient.tsx`, `NavBar.tsx` — restyled per the design system above; logic mostly unchanged aside from the income-split/hours calc in the dashboard cards. Latest tweak: net amount is now `text-4xl font-bold`, secondary pills bumped to `text-sm` for mobile legibility.
 
 ## Important gotchas / decisions
 

@@ -24,21 +24,39 @@ type MonthLogRow = {
   income_sources: { category: "employee" | "freelance" } | null;
 };
 
+const MONTH_OPTIONS = ["current", "next", "two_ahead"] as const;
+type MonthOption = (typeof MONTH_OPTIONS)[number];
+
+const MONTH_OFFSETS: Record<MonthOption, number> = {
+  current: 0,
+  next: 1,
+  two_ahead: 2,
+};
+
+const MONTH_TOGGLE_LABELS: Record<MonthOption, string> = {
+  current: "חודש נוכחי",
+  next: "חודש עוקב",
+  two_ahead: "בעוד חודשיים",
+};
+
 export default async function TaxesPage({
   searchParams,
 }: {
   searchParams: Promise<{ month?: string }>;
 }) {
   const { month } = await searchParams;
-  const selectedMonth = month === "next" ? "next" : "current";
+  const selectedMonth: MonthOption = MONTH_OPTIONS.includes(month as MonthOption)
+    ? (month as MonthOption)
+    : "next";
 
   const supabase = await createClient();
 
   const now = new Date();
-  const targetDate =
-    selectedMonth === "next"
-      ? new Date(now.getFullYear(), now.getMonth() + 1, 1)
-      : now;
+  const targetDate = new Date(
+    now.getFullYear(),
+    now.getMonth() + MONTH_OFFSETS[selectedMonth],
+    1
+  );
 
   const monthStart = toDateOnlyString(startOfMonth(targetDate));
   const monthEnd = toDateOnlyString(endOfMonth(targetDate));
@@ -73,32 +91,39 @@ export default async function TaxesPage({
           מיסים וסוציאליות
         </h1>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border border-black/10 bg-white p-1 dark:border-white/10 dark:bg-zinc-900">
-            <Link
-              href="/taxes?month=current"
-              className={`flex h-9 items-center rounded-md px-3 text-sm font-medium transition-colors ${
-                selectedMonth === "current"
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
-              }`}
-            >
-              חודש נוכחי
-            </Link>
-            <Link
-              href="/taxes?month=next"
-              className={`flex h-9 items-center rounded-md px-3 text-sm font-medium transition-colors ${
-                selectedMonth === "next"
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
-              }`}
-            >
-              חודש עוקב
-            </Link>
-          </div>
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">
-            {monthLabel(targetDate)}
-          </span>
+        <div className="flex flex-wrap items-center gap-1 rounded-md border border-black/10 bg-white p-1 dark:border-white/10 dark:bg-zinc-900">
+          {MONTH_OPTIONS.map((option) => {
+            const optionDate = new Date(
+              now.getFullYear(),
+              now.getMonth() + MONTH_OFFSETS[option],
+              1
+            );
+            const isActive = selectedMonth === option;
+            return (
+              <Link
+                key={option}
+                href={`/taxes?month=${option}`}
+                className={`flex h-11 flex-col items-center justify-center rounded-md px-3 text-center transition-colors ${
+                  isActive
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
+                }`}
+              >
+                <span className="text-sm font-medium">
+                  {MONTH_TOGGLE_LABELS[option]}
+                </span>
+                <span
+                  className={`text-xs ${
+                    isActive
+                      ? "text-white/80 dark:text-zinc-900/70"
+                      : "text-zinc-400 dark:text-zinc-500"
+                  }`}
+                >
+                  {monthLabel(optionDate)}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

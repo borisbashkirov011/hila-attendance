@@ -7,9 +7,9 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(dateString: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
+  return new Intl.DateTimeFormat("he-IL", {
+    day: "numeric",
+    month: "long",
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(dateString));

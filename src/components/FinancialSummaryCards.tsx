@@ -30,22 +30,22 @@ function MonthCard({
 
   return (
     <div className={`rounded-3xl p-6 shadow-sm md:flex-1 ${cardStyles}`}>
-      <p className="mb-4 text-sm font-medium tracking-tight text-slate-600">
+      <p className="mb-4 text-sm font-semibold tracking-tight text-slate-600">
         {summary.label}
       </p>
 
-      <p className="text-xs font-medium text-slate-500">צפי הכנסות (נטו)</p>
-      <p className="mb-4 text-3xl font-bold text-slate-800">
+      <p className="text-sm font-medium text-slate-500">צפי הכנסות (נטו)</p>
+      <p className="mb-4 text-4xl font-bold tracking-tight text-slate-900">
         {formatCurrency(summary.net)}
       </p>
 
       <div className="mb-4 flex flex-wrap gap-2">
         <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${pillStyles}`}
+          className={`rounded-full px-3 py-1.5 text-sm font-medium ${pillStyles}`}
         >
           ברוטו · {formatCurrency(summary.gross)}
         </span>
-        <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-600">
+        <span className="rounded-full bg-white/70 px-3 py-1.5 text-sm font-medium text-slate-600">
           מיסים ופנסיה · {formatCurrency(summary.taxPension)}
         </span>
       </div>
