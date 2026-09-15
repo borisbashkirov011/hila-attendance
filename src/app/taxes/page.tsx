@@ -45,7 +45,9 @@ export default async function TaxesPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const { month } = await searchParams;
-  const selectedMonth: MonthOption = MONTH_OPTIONS.includes(month as MonthOption)
+  const selectedMonth: MonthOption = (MONTH_OPTIONS as readonly string[]).includes(
+    month ?? ""
+  )
     ? (month as MonthOption)
     : "next";
 
@@ -93,13 +95,13 @@ export default async function TaxesPage({
 
         <MonthToggle
           selected={selectedMonth}
-          hrefFor={(value) => `/taxes?month=${value}`}
           options={MONTH_OPTIONS.map((option) => ({
             value: option,
             label: MONTH_TOGGLE_LABELS[option],
             sublabel: monthLabel(
               new Date(now.getFullYear(), now.getMonth() + MONTH_OFFSETS[option], 1)
             ),
+            href: `/taxes?month=${option}`,
           }))}
         />
       </div>

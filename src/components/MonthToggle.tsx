@@ -7,25 +7,24 @@ export type MonthToggleOption = {
   value: string;
   label: string;
   sublabel: string;
+  href: string;
 };
 
 export default function MonthToggle({
   options,
   selected,
-  hrefFor,
 }: {
   options: MonthToggleOption[];
   selected: string;
-  hrefFor: (value: string) => string;
 }) {
   const router = useRouter();
   const [optimisticSelected, setOptimisticSelected] = useOptimistic(selected);
 
-  function handleSelect(value: string) {
-    if (value === optimisticSelected) return;
+  function handleSelect(option: MonthToggleOption) {
+    if (option.value === optimisticSelected) return;
     startTransition(() => {
-      setOptimisticSelected(value);
-      router.push(hrefFor(value));
+      setOptimisticSelected(option.value);
+      router.push(option.href);
     });
   }
 
@@ -37,7 +36,7 @@ export default function MonthToggle({
           <button
             key={option.value}
             type="button"
-            onClick={() => handleSelect(option.value)}
+            onClick={() => handleSelect(option)}
             className={`flex h-11 flex-col items-center justify-center rounded-md px-3 text-center transition-colors ${
               isActive
                 ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
