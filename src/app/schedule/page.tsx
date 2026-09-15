@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthRange } from "@/lib/utils/calendar";
 import CalendarClient from "@/components/CalendarClient";
+import MonthNavLink from "@/components/MonthNavLink";
 import type { WorkLog } from "@/lib/types/work-log";
 
 export default async function SchedulePage({
@@ -51,21 +51,21 @@ export default async function SchedulePage({
 
       <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-zinc-900">
         <div className="mb-4 flex items-center justify-between">
-          <Link
+          <MonthNavLink
             href={`/schedule?year=${prevMonthDate.getFullYear()}&month=${prevMonthDate.getMonth() + 1}`}
             className="flex h-11 items-center rounded-md px-4 text-sm font-medium text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             החודש הקודם
-          </Link>
+          </MonthNavLink>
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
             {monthLabel}
           </h2>
-          <Link
+          <MonthNavLink
             href={`/schedule?year=${nextMonthDate.getFullYear()}&month=${nextMonthDate.getMonth() + 1}`}
             className="flex h-11 items-center rounded-md px-4 text-sm font-medium text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             החודש הבא
-          </Link>
+          </MonthNavLink>
         </div>
 
         <CalendarClient

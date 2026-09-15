@@ -59,6 +59,7 @@ export default function NavBar() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={false}
                 className={`flex h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-[11px] font-medium transition-colors md:h-11 md:flex-initial md:flex-row md:gap-1.5 md:px-4 md:text-sm ${
                   isActive
                     ? "bg-rose-50 text-rose-500"

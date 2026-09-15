@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { toDateOnlyString } from "@/lib/utils/payment-dates";
 import { calculateTaxBreakdown } from "@/lib/utils/tax-calculations";
 import TaxCalculatorCards from "@/components/TaxCalculatorCards";
+import MonthToggle from "@/components/MonthToggle";
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -91,40 +91,17 @@ export default async function TaxesPage({
           מיסים וסוציאליות
         </h1>
 
-        <div className="flex flex-wrap items-center gap-1 rounded-md border border-black/10 bg-white p-1 dark:border-white/10 dark:bg-zinc-900">
-          {MONTH_OPTIONS.map((option) => {
-            const optionDate = new Date(
-              now.getFullYear(),
-              now.getMonth() + MONTH_OFFSETS[option],
-              1
-            );
-            const isActive = selectedMonth === option;
-            return (
-              <Link
-                key={option}
-                href={`/taxes?month=${option}`}
-                className={`flex h-11 flex-col items-center justify-center rounded-md px-3 text-center transition-colors ${
-                  isActive
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
-                }`}
-              >
-                <span className="text-sm font-medium">
-                  {MONTH_TOGGLE_LABELS[option]}
-                </span>
-                <span
-                  className={`text-xs ${
-                    isActive
-                      ? "text-white/80 dark:text-zinc-900/70"
-                      : "text-zinc-400 dark:text-zinc-500"
-                  }`}
-                >
-                  {monthLabel(optionDate)}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+        <MonthToggle
+          selected={selectedMonth}
+          hrefFor={(value) => `/taxes?month=${value}`}
+          options={MONTH_OPTIONS.map((option) => ({
+            value: option,
+            label: MONTH_TOGGLE_LABELS[option],
+            sublabel: monthLabel(
+              new Date(now.getFullYear(), now.getMonth() + MONTH_OFFSETS[option], 1)
+            ),
+          }))}
+        />
       </div>
 
       <TaxCalculatorCards breakdown={breakdown} />
