@@ -29,7 +29,9 @@ export async function uploadReceiptFile(
       return { success: false, error: "לא נבחר קובץ" };
     }
 
-    const filePath = `${Date.now()}-${file.name}`;
+    const ext = file.name.split(".").pop();
+    const safeName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${ext}`;
+    const filePath = safeName;
 
     const { error } = await supabase.storage
       .from("receipts")
@@ -109,18 +111,24 @@ export async function addReceipt(
 }
 
 export async function getReceipts(year: number) {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("receipts")
-    .select("*")
-    .gte("for_month", `${year}-01`)
-    .lte("for_month", `${year}-12`)
-    .order("receipt_date", { ascending: false });
+    const { data, error } = await supabase
+      .from("receipts")
+      .select("*")
+      .gte("for_month", `${year}-01`)
+      .lte("for_month", `${year}-12`)
+      .order("receipt_date", { ascending: false });
 
-  if (error) {
-    throw new Error(`שגיאה בטעינת קבלות: ${error.message}`);
+    if (error) {
+      console.error("getReceipts error:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("getReceipts exception:", err);
+    return [];
   }
-
-  return data;
 }

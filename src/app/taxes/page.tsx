@@ -128,7 +128,7 @@ export default async function TaxesPage({
           קבלות ({now.getFullYear()})
         </h2>
         <ul className="flex flex-col gap-2">
-          {(receipts ?? []).map((receipt) => (
+          {Array.isArray(receipts) && receipts.map((receipt) => (
             <li
               key={receipt.id}
               className="flex flex-col gap-1 rounded-md border border-black/10 p-3 text-sm dark:border-white/20"
