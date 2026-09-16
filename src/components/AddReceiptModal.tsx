@@ -23,8 +23,10 @@ export default function AddReceiptModal({
   const [fileName, setFileName] = useState<string | null>(null);
   const initialMonth = useMemo(() => initialDate.slice(0, 7), [initialDate]);
 
-  function handleSubmit(formData: FormData) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError(null);
+    const formData = new FormData(event.currentTarget);
     startTransition(async () => {
       try {
         const file = formData.get("file") as File | null;
@@ -62,7 +64,7 @@ export default function AddReceiptModal({
         </h3>
         <form
           ref={formRef}
-          action={handleSubmit}
+          onSubmit={handleSubmit}
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1">
