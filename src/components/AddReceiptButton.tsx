@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddReceiptModal from "@/components/AddReceiptModal";
 import type { IncomeSource } from "@/lib/types/income-source";
 
@@ -12,6 +12,14 @@ export default function AddReceiptButton({
   sources: IncomeSource[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional client-only mount guard
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) return null;
 
   return (
     <>

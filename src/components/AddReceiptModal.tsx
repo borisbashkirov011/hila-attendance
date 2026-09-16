@@ -17,6 +17,7 @@ export default function AddReceiptModal({
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -129,11 +130,11 @@ export default function AddReceiptModal({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="receipt-file-upload" className="text-sm text-zinc-700 dark:text-zinc-300">
+            <span className="text-sm text-zinc-700 dark:text-zinc-300">
               קובץ קבלה
-            </label>
+            </span>
             <input
-              id="receipt-file-upload"
+              ref={fileInputRef}
               name="file"
               type="file"
               accept="image/*,application/pdf"
@@ -142,13 +143,21 @@ export default function AddReceiptModal({
                 setFileName(event.target.files?.[0]?.name ?? null)
               }
             />
-            <label
-              htmlFor="receipt-file-upload"
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
               className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-black/15 px-4 py-6 text-center text-sm text-zinc-600 transition-colors hover:border-black/30 dark:border-white/20 dark:text-zinc-400 dark:hover:border-white/40"
             >
               <Upload className="h-6 w-6" />
               <span>{fileName ?? "לחצו להעלאת קובץ (תמונה או PDF)"}</span>
-            </label>
+            </div>
           </div>
 
           {error && (
