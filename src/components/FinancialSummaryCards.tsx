@@ -9,8 +9,6 @@ export type MonthFinancialSummary = {
   avgHourlyRate: number;
   employeePct: number;
   freelancePct: number;
-  freelanceGross: number;
-  actualIncome: number;
 };
 
 function MonthCard({
@@ -20,7 +18,6 @@ function MonthCard({
   summary: MonthFinancialSummary;
   variant: "current" | "next";
 }) {
-  const pendingAmount = summary.freelanceGross - summary.actualIncome;
   const cardStyles =
     variant === "current"
       ? "bg-gradient-to-br from-rose-100/80 via-orange-50/60 to-rose-50/80 border border-rose-200/70"
@@ -85,21 +82,6 @@ function MonthCard({
             תעריף ממוצע · {formatCurrency(summary.avgHourlyRate)}/שעה
           </span>
         </div>
-      </div>
-
-      <div className="mt-4 flex flex-col gap-1 border-t border-white/60 pt-3 text-sm font-medium text-slate-600">
-        <span>הכנסות בפועל (קבלות) · {formatCurrency(summary.actualIncome)}</span>
-        <span
-          className={
-            pendingAmount > 0
-              ? "text-amber-600"
-              : pendingAmount < 0
-                ? "text-emerald-600"
-                : "text-slate-600"
-          }
-        >
-          יתרה לגבייה · {formatCurrency(pendingAmount)}
-        </span>
       </div>
     </div>
   );

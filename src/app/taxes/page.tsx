@@ -92,6 +92,16 @@ export default async function TaxesPage({
 
   const receipts = await getReceipts(now.getFullYear());
 
+  const targetMonthValue = toDateOnlyString(targetDate).slice(0, 7);
+  const receiptsForTargetMonth =
+    targetDate.getFullYear() === now.getFullYear()
+      ? receipts
+      : await getReceipts(targetDate.getFullYear());
+
+  const actualIncome = receiptsForTargetMonth
+    .filter((receipt) => receipt.expected_payment_month === targetMonthValue)
+    .reduce((sum, receipt) => sum + (Number(receipt.amount) || 0), 0);
+
   const { data: sourcesData } = await supabase
     .from("income_sources")
     .select("id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active")
@@ -125,7 +135,7 @@ export default async function TaxesPage({
 
       <IncomeSummaryWidget />
 
-      <TaxCalculatorCards breakdown={breakdown} />
+      <TaxCalculatorCards breakdown={breakdown} actualIncome={actualIncome} />
 
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">

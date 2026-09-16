@@ -30,10 +30,13 @@ function Row({
 
 export default function TaxCalculatorCards({
   breakdown,
+  actualIncome,
 }: {
   breakdown: TaxBreakdown;
+  actualIncome: number;
 }) {
   const { employee, freelance } = breakdown;
+  const pendingAmount = freelance.gross - actualIncome;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -71,6 +74,9 @@ export default function TaxCalculatorCards({
           <hr className="my-1 border-amber-200 dark:border-amber-900/40" />
           <Row label="סה״כ להפריש" value={freelance.totalAllocations} />
           <Row label="נותר בפועל" value={freelance.remainingNet} highlight />
+          <hr className="my-1 border-amber-200 dark:border-amber-900/40" />
+          <Row label="הכנסות בפועל (קבלות)" value={actualIncome} />
+          <Row label="יתרה לגבייה" value={pendingAmount} highlight />
         </div>
       </div>
     </div>
