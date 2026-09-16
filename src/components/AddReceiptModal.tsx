@@ -28,27 +28,33 @@ export default function AddReceiptModal({
     setError(null);
     const formData = new FormData(event.currentTarget);
     startTransition(async () => {
-      try {
-        const file = formData.get("file") as File | null;
-        let fileUrl: string | undefined;
+      const file = formData.get("file") as File | null;
+      let fileUrl: string | undefined;
 
-        if (file && file.size > 0) {
-          fileUrl = await uploadReceiptFile(formData);
+      if (file && file.size > 0) {
+        const uploadResult = await uploadReceiptFile(formData);
+        if (!uploadResult.success) {
+          alert(uploadResult.error);
+          return;
         }
-
-        await addReceipt({
-          receipt_date: String(formData.get("receipt_date")),
-          source_id: String(formData.get("source_id")),
-          for_month: String(formData.get("for_month")),
-          amount: Number(formData.get("amount")),
-          file_url: fileUrl,
-        });
-
-        router.refresh();
-        onClose();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "שגיאה לא ידועה");
+        fileUrl = uploadResult.data;
       }
+
+      const addResult = await addReceipt({
+        receipt_date: String(formData.get("receipt_date")),
+        source_id: String(formData.get("source_id")),
+        for_month: String(formData.get("for_month")),
+        amount: Number(formData.get("amount")),
+        file_url: fileUrl,
+      });
+
+      if (!addResult.success) {
+        alert(addResult.error);
+        return;
+      }
+
+      router.refresh();
+      onClose();
     });
   }
 

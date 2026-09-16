@@ -14,65 +14,97 @@ export type ReceiptData = {
   file_url?: string;
 };
 
-export async function uploadReceiptFile(formData: FormData) {
-  const supabase = await createClient();
-  const file = formData.get("file") as File;
+export type ActionResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
 
-  if (!file) {
-    throw new Error("לא נבחר קובץ");
+export async function uploadReceiptFile(
+  formData: FormData
+): Promise<ActionResult<string>> {
+  try {
+    const supabase = await createClient();
+    const file = formData.get("file") as File;
+
+    if (!file) {
+      return { success: false, error: "לא נבחר קובץ" };
+    }
+
+    const filePath = `${Date.now()}-${file.name}`;
+
+    const { error } = await supabase.storage
+      .from("receipts")
+      .upload(filePath, file);
+
+    if (error) {
+      console.error("uploadReceiptFile error:", error);
+      return { success: false, error: `שגיאה בהעלאת הקובץ: ${error.message}` };
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("receipts").getPublicUrl(filePath);
+
+    return { success: true, data: publicUrl };
+  } catch (err) {
+    console.error("uploadReceiptFile exception:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "שגיאה לא ידועה בהעלאת הקובץ",
+    };
   }
-
-  const filePath = `${Date.now()}-${file.name}`;
-
-  const { error } = await supabase.storage
-    .from("receipts")
-    .upload(filePath, file);
-
-  if (error) {
-    throw new Error(`שגיאה בהעלאת הקובץ: ${error.message}`);
-  }
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("receipts").getPublicUrl(filePath);
-
-  return publicUrl;
 }
 
-export async function addReceipt(data: ReceiptData) {
-  const supabase = await createClient();
+export async function addReceipt(
+  data: ReceiptData
+): Promise<ActionResult<null>> {
+  try {
+    const supabase = await createClient();
 
-  const { data: source, error: sourceError } = await supabase
-    .from("income_sources")
-    .select("name, payment_mode, payment_offset_days")
-    .eq("id", data.source_id)
-    .single();
+    const { data: source, error: sourceError } = await supabase
+      .from("income_sources")
+      .select("name, payment_mode, payment_offset_days")
+      .eq("id", data.source_id)
+      .single();
 
-  if (sourceError || !source) {
-    throw new Error(`מקור ההכנסה לא נמצא: ${sourceError?.message ?? "not found"}`);
-  }
+    if (sourceError || !source) {
+      console.error("addReceipt sourceError:", sourceError);
+      return {
+        success: false,
+        error: `מקור ההכנסה לא נמצא: ${sourceError?.message ?? "not found"}`,
+      };
+    }
 
-  const [forYear, forMonth] = data.for_month.split("-").map(Number);
-  const forMonthDate = new Date(forYear, forMonth - 1, 1);
-  const expectedPaymentDate = calculateExpectedPaymentDate(
-    forMonthDate,
-    source.payment_mode,
-    source.payment_offset_days
-  );
-  const expectedPaymentMonth = toDateOnlyString(expectedPaymentDate).slice(0, 7);
+    const [forYear, forMonth] = data.for_month.split("-").map(Number);
+    const forMonthDate = new Date(forYear, forMonth - 1, 1);
+    const expectedPaymentDate = calculateExpectedPaymentDate(
+      forMonthDate,
+      source.payment_mode,
+      source.payment_offset_days
+    );
+    const expectedPaymentMonth = toDateOnlyString(expectedPaymentDate).slice(0, 7);
 
-  const { error } = await supabase.from("receipts").insert({
-    receipt_date: data.receipt_date,
-    source_id: data.source_id,
-    client_type: source.name,
-    for_month: data.for_month,
-    expected_payment_month: expectedPaymentMonth,
-    amount: data.amount,
-    file_url: data.file_url,
-  });
+    const { error } = await supabase.from("receipts").insert({
+      receipt_date: data.receipt_date,
+      source_id: data.source_id,
+      client_type: source.name,
+      for_month: data.for_month,
+      expected_payment_month: expectedPaymentMonth,
+      amount: data.amount,
+      file_url: data.file_url,
+    });
 
-  if (error) {
-    throw new Error(`שגיאה בשמירת הקבלה: ${error.message}`);
+    if (error) {
+      console.error("addReceipt insert error:", error);
+      return { success: false, error: `שגיאה בשמירת הקבלה: ${error.message}` };
+    }
+
+    return { success: true, data: null };
+  } catch (err) {
+    console.error("addReceipt exception:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "שגיאה לא ידועה בשמירת הקבלה",
+    };
   }
 }
 
