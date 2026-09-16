@@ -4,6 +4,7 @@ import FinancialSummaryCards from "@/components/FinancialSummaryCards";
 import UpcomingShifts from "@/components/UpcomingShifts";
 import QuickAddModal from "@/components/QuickAddModal";
 import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
+import { getReceipts } from "@/app/actions/receiptActions";
 import type { WorkLog } from "@/lib/types/work-log";
 
 function startOfMonth(date: Date): Date {
@@ -64,7 +65,17 @@ function sumMonthTotals(rows: MonthTotalsRow[]) {
     avgHourlyRate: totals.hours > 0 ? totals.gross / totals.hours : 0,
     employeePct,
     freelancePct: totals.gross > 0 ? 100 - employeePct : 0,
+    freelanceGross: totals.freelanceGross,
   };
+}
+
+function sumReceiptsForMonth(
+  receipts: { expected_payment_month: string; amount: number }[],
+  monthValue: string
+) {
+  return receipts
+    .filter((receipt) => receipt.expected_payment_month === monthValue)
+    .reduce((sum, receipt) => sum + (Number(receipt.amount) || 0), 0);
 }
 
 export default async function DashboardPage() {
@@ -114,6 +125,15 @@ export default async function DashboardPage() {
   const incomeSources = sourcesResult.data ?? [];
   const upcomingLogs = (upcomingResult.data ?? []) as unknown as WorkLog[];
 
+  const receiptYears = Array.from(
+    new Set([now.getFullYear(), nextMonthDate.getFullYear()])
+  );
+  const receiptsByYear = await Promise.all(receiptYears.map(getReceipts));
+  const receipts = receiptsByYear.flat();
+
+  const currentMonthValue = toDateOnlyString(startOfMonth(now)).slice(0, 7);
+  const nextMonthValue = toDateOnlyString(startOfMonth(nextMonthDate)).slice(0, 7);
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-3 py-4 sm:gap-6 sm:px-8 sm:py-6">
       <div>
@@ -133,12 +153,14 @@ export default async function DashboardPage() {
           ...sumMonthTotals(
             (currentMonthResult.data ?? []) as unknown as MonthTotalsRow[]
           ),
+          actualIncome: sumReceiptsForMonth(receipts, currentMonthValue),
         }}
         next={{
           label: monthLabel(nextMonthDate),
           ...sumMonthTotals(
             (nextMonthResult.data ?? []) as unknown as MonthTotalsRow[]
           ),
+          actualIncome: sumReceiptsForMonth(receipts, nextMonthValue),
         }}
       />
 
