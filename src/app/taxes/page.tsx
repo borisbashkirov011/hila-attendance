@@ -5,6 +5,7 @@ import TaxCalculatorCards from "@/components/TaxCalculatorCards";
 import MonthToggle from "@/components/MonthToggle";
 import AddReceiptButton from "@/components/AddReceiptButton";
 import ReceiptRow from "@/components/ReceiptRow";
+import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
 import { getReceipts } from "@/app/actions/receiptActions";
 
 function startOfMonth(date: Date): Date {
@@ -121,6 +122,8 @@ export default async function TaxesPage({
           />
         </div>
       </div>
+
+      <IncomeSummaryWidget />
 
       <TaxCalculatorCards breakdown={breakdown} />
 

@@ -3,6 +3,7 @@ import { toDateOnlyString } from "@/lib/utils/payment-dates";
 import FinancialSummaryCards from "@/components/FinancialSummaryCards";
 import UpcomingShifts from "@/components/UpcomingShifts";
 import QuickAddModal from "@/components/QuickAddModal";
+import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
 import type { WorkLog } from "@/lib/types/work-log";
 
 function startOfMonth(date: Date): Date {
@@ -123,6 +124,8 @@ export default async function DashboardPage() {
           דשבורד ותזרים
         </p>
       </div>
+
+      <IncomeSummaryWidget />
 
       <FinancialSummaryCards
         current={{
