@@ -2,8 +2,15 @@
 
 import { useState } from "react";
 import AddReceiptModal from "@/components/AddReceiptModal";
+import type { IncomeSource } from "@/lib/types/income-source";
 
-export default function AddReceiptButton() {
+export default function AddReceiptButton({
+  initialDate,
+  sources,
+}: {
+  initialDate: string;
+  sources: IncomeSource[];
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -15,7 +22,13 @@ export default function AddReceiptButton() {
       >
         הוספת קבלה +
       </button>
-      {isOpen && <AddReceiptModal onClose={() => setIsOpen(false)} />}
+      {isOpen && (
+        <AddReceiptModal
+          initialDate={initialDate}
+          sources={sources}
+          onClose={() => setIsOpen(false)}
+        />
+      )}
     </>
   );
 }

@@ -90,6 +90,14 @@ export default async function TaxesPage({
 
   const receipts = await getReceipts(now.getFullYear());
 
+  const { data: sourcesData } = await supabase
+    .from("income_sources")
+    .select("id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active")
+    .eq("category", "freelance")
+    .eq("is_active", true);
+
+  const freelanceSources = sourcesData ?? [];
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -98,7 +106,7 @@ export default async function TaxesPage({
         </h1>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <AddReceiptButton />
+          <AddReceiptButton initialDate={toDateOnlyString(now)} sources={freelanceSources} />
           <MonthToggle
             selected={selectedMonth}
             options={MONTH_OPTIONS.map((option) => ({

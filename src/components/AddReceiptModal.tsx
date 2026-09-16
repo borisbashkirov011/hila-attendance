@@ -1,24 +1,26 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Upload } from "lucide-react";
 import { addReceipt, uploadReceiptFile } from "@/app/actions/receiptActions";
+import type { IncomeSource } from "@/lib/types/income-source";
 
-const CLIENT_TYPE_OPTIONS = ["מעונות", "כללית (עצמאי)", "פרטי"];
-
-function todayDateString(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function currentMonthString(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-export default function AddReceiptModal({ onClose }: { onClose: () => void }) {
+export default function AddReceiptModal({
+  initialDate,
+  sources,
+  onClose,
+}: {
+  initialDate: string;
+  sources: IncomeSource[];
+  onClose: () => void;
+}) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const initialMonth = useMemo(() => initialDate.slice(0, 7), [initialDate]);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -33,7 +35,7 @@ export default function AddReceiptModal({ onClose }: { onClose: () => void }) {
 
         await addReceipt({
           receipt_date: String(formData.get("receipt_date")),
-          client_type: String(formData.get("client_type")),
+          source_id: String(formData.get("source_id")),
           for_month: String(formData.get("for_month")),
           amount: Number(formData.get("amount")),
           file_url: fileUrl,
@@ -70,25 +72,29 @@ export default function AddReceiptModal({ onClose }: { onClose: () => void }) {
               id="receipt_date"
               name="receipt_date"
               type="date"
-              defaultValue={todayDateString()}
+              defaultValue={initialDate}
               required
               className="h-11 rounded-md border border-black/10 px-3 text-sm dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-50"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="client_type" className="text-sm text-zinc-700 dark:text-zinc-300">
-              סוג לקוח
+            <label htmlFor="source_id" className="text-sm text-zinc-700 dark:text-zinc-300">
+              לקוח
             </label>
             <select
-              id="client_type"
-              name="client_type"
+              id="source_id"
+              name="source_id"
               required
+              defaultValue=""
               className="h-11 rounded-md border border-black/10 px-3 text-sm dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-50"
             >
-              {CLIENT_TYPE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
+              <option value="" disabled>
+                בחר לקוח
+              </option>
+              {sources.map((source) => (
+                <option key={source.id} value={source.id}>
+                  {source.name}
                 </option>
               ))}
             </select>
@@ -102,7 +108,7 @@ export default function AddReceiptModal({ onClose }: { onClose: () => void }) {
               id="for_month"
               name="for_month"
               type="month"
-              defaultValue={currentMonthString()}
+              defaultValue={initialMonth}
               required
               className="h-11 rounded-md border border-black/10 px-3 text-sm dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-50"
             />
@@ -131,8 +137,18 @@ export default function AddReceiptModal({ onClose }: { onClose: () => void }) {
               name="file"
               type="file"
               accept="image/*,application/pdf"
-              className="text-sm text-zinc-700 dark:text-zinc-300"
+              className="hidden"
+              onChange={(event) =>
+                setFileName(event.target.files?.[0]?.name ?? null)
+              }
             />
+            <label
+              htmlFor="file"
+              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-black/15 px-4 py-6 text-center text-sm text-zinc-600 transition-colors hover:border-black/30 dark:border-white/20 dark:text-zinc-400 dark:hover:border-white/40"
+            >
+              <Upload className="h-6 w-6" />
+              <span>{fileName ?? "לחצו להעלאת קובץ (תמונה או PDF)"}</span>
+            </label>
           </div>
 
           {error && (
