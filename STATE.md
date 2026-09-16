@@ -25,6 +25,8 @@ Entire UI is Hebrew / RTL (`<html lang="he" dir="rtl">` in `src/app/layout.tsx`)
 - `NavBar.tsx` — bottom-fixed tab bar on mobile (`fixed bottom-0 ... backdrop-blur-md`), sticky top header on `md:`. SVG icons per tab, active tab = rose pill background + rose text, inactive = `text-[#8E8E93]`.
 - Mobile-first responsive pass done across layout/dashboard/calendar: bottom-nav-safe `pb-16` body padding, FAB at `bottom-20 end-4` (clears bottom nav) → `md:bottom-6`, calendar grid uses smaller gaps/text/`min-h-14` cells on mobile, full size at `sm:`.
 - Session pattern: user has been issuing **strictly scoped, cost-limited tasks** ("Target files ONLY", "STRICT COST LIMIT: do NOT run tsc/lint/build/terminal commands — write, save, and STOP"). None of this session's work has been typechecked, linted, or built. **Run a full `tsc`/`next build` pass before shipping.**
+- Performance pass this session: server pages already parallelize Supabase queries with `Promise.all` (`page.tsx`, `schedule/page.tsx`); `taxes/page.tsx` only ever had one query. `NavBar.tsx` links use `prefetch={false}`. Instant-feedback nav added via two new client components: `MonthToggle.tsx` (taxes month switcher, `useOptimistic`+`useTransition`) and `MonthNavLink.tsx` (schedule prev/next month buttons, `useTransition`).
+- **Gotcha learned the hard way**: passing a function prop (e.g. `hrefFor={(v) => ...}`) from a Server Component into a Client Component crashes with a 500 (functions aren't serializable across the server/client boundary). Fix pattern used: precompute a plain `href: string` per option on the server and pass that instead of a callback. Keep this in mind for any future Server→Client prop wiring.
 
 ## Key shared pieces (mostly unchanged from before this session)
 
@@ -36,6 +38,8 @@ Entire UI is Hebrew / RTL (`<html lang="he" dir="rtl">` in `src/app/layout.tsx`)
 - `src/components/CalendarSyncButton.tsx` — **new**: client button, opens `webcal://` link directly on iOS (detected via UA sniff), otherwise copies the `https://…/api/calendar/feed` URL to clipboard with a small toast.
 - `src/components/LogSessionForm.tsx` — now dual-purpose (add/edit), used both standalone (`QuickAddModal`) and inside `CalendarClient`'s daily-summary flow.
 - `src/components/FinancialSummaryCards.tsx`, `UpcomingShifts.tsx`, `CalendarClient.tsx`, `NavBar.tsx` — restyled per the design system above; logic mostly unchanged aside from the income-split/hours calc in the dashboard cards. Latest tweak: net amount is now `text-4xl font-bold`, secondary pills bumped to `text-sm` for mobile legibility.
+- `src/components/MonthToggle.tsx` — **new**: client 3-way month toggle used by `/taxes`, takes `options: { value, label, sublabel, href }[]` + `selected`, no function props (see gotcha below).
+- `src/components/MonthNavLink.tsx` — **new**: generic client prev/next-month button wrapper (`useTransition`) used by `/schedule`.
 
 ## Important gotchas / decisions
 

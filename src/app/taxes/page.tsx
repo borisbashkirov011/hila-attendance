@@ -3,6 +3,8 @@ import { toDateOnlyString } from "@/lib/utils/payment-dates";
 import { calculateTaxBreakdown } from "@/lib/utils/tax-calculations";
 import TaxCalculatorCards from "@/components/TaxCalculatorCards";
 import MonthToggle from "@/components/MonthToggle";
+import AddReceiptButton from "@/components/AddReceiptButton";
+import { getReceipts } from "@/app/actions/receiptActions";
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -86,6 +88,8 @@ export default async function TaxesPage({
 
   const breakdown = calculateTaxBreakdown(totals.employee, totals.freelance);
 
+  const receipts = await getReceipts(now.getFullYear());
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -93,20 +97,50 @@ export default async function TaxesPage({
           מיסים וסוציאליות
         </h1>
 
-        <MonthToggle
-          selected={selectedMonth}
-          options={MONTH_OPTIONS.map((option) => ({
-            value: option,
-            label: MONTH_TOGGLE_LABELS[option],
-            sublabel: monthLabel(
-              new Date(now.getFullYear(), now.getMonth() + MONTH_OFFSETS[option], 1)
-            ),
-            href: `/taxes?month=${option}`,
-          }))}
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <AddReceiptButton />
+          <MonthToggle
+            selected={selectedMonth}
+            options={MONTH_OPTIONS.map((option) => ({
+              value: option,
+              label: MONTH_TOGGLE_LABELS[option],
+              sublabel: monthLabel(
+                new Date(now.getFullYear(), now.getMonth() + MONTH_OFFSETS[option], 1)
+              ),
+              href: `/taxes?month=${option}`,
+            }))}
+          />
+        </div>
       </div>
 
       <TaxCalculatorCards breakdown={breakdown} />
+
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          קבלות ({now.getFullYear()})
+        </h2>
+        <ul className="flex flex-col gap-2">
+          {(receipts ?? []).map((receipt) => (
+            <li
+              key={receipt.id}
+              className="flex flex-col gap-1 rounded-md border border-black/10 p-3 text-sm dark:border-white/20"
+            >
+              <span>{receipt.receipt_date} · {receipt.client_type} · {receipt.for_month}</span>
+              <span>₪{receipt.amount}</span>
+              {receipt.file_url && (
+                <a
+                  href={receipt.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline dark:text-blue-400"
+                >
+                  קובץ מצורף
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
