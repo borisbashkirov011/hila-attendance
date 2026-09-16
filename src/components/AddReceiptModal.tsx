@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { addReceipt, uploadReceiptFile } from "@/app/actions/receiptActions";
@@ -20,7 +20,12 @@ export default function AddReceiptModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const initialMonth = useMemo(() => initialDate.slice(0, 7), [initialDate]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -48,6 +53,8 @@ export default function AddReceiptModal({
       }
     });
   }
+
+  if (!isMounted) return null;
 
   return (
     <div
@@ -129,11 +136,11 @@ export default function AddReceiptModal({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="file" className="text-sm text-zinc-700 dark:text-zinc-300">
+            <label htmlFor="receipt-file-upload" className="text-sm text-zinc-700 dark:text-zinc-300">
               קובץ קבלה
             </label>
             <input
-              id="file"
+              id="receipt-file-upload"
               name="file"
               type="file"
               accept="image/*,application/pdf"
@@ -143,7 +150,7 @@ export default function AddReceiptModal({
               }
             />
             <label
-              htmlFor="file"
+              htmlFor="receipt-file-upload"
               className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-black/15 px-4 py-6 text-center text-sm text-zinc-600 transition-colors hover:border-black/30 dark:border-white/20 dark:text-zinc-400 dark:hover:border-white/40"
             >
               <Upload className="h-6 w-6" />
