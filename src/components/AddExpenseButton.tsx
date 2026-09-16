@@ -1,0 +1,38 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import AddExpenseModal from "@/components/AddExpenseModal";
+
+export default function AddExpenseButton({
+  initialDate,
+}: {
+  initialDate: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional client-only mount guard
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="flex h-11 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+      >
+        הוספת הוצאה +
+      </button>
+      {isOpen && (
+        <AddExpenseModal
+          initialDate={initialDate}
+          onClose={() => setIsOpen(false)}
+        />
+      )}
+    </>
+  );
+}

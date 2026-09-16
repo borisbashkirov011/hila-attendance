@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { toDateOnlyString } from "@/lib/utils/payment-dates";
 import FinancialSummaryCards from "@/components/FinancialSummaryCards";
 import UpcomingShifts from "@/components/UpcomingShifts";
-import QuickAddModal from "@/components/QuickAddModal";
+import DashboardQuickActions from "@/components/DashboardQuickActions";
 import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
 import type { WorkLog } from "@/lib/types/work-log";
 
@@ -80,13 +80,26 @@ export default async function DashboardPage() {
   const nextMonthStart = toDateOnlyString(startOfMonth(nextMonthDate));
   const nextMonthEnd = toDateOnlyString(endOfMonth(nextMonthDate));
 
-  const [sourcesResult, currentMonthResult, nextMonthResult, upcomingResult] =
+  const [
+    sourcesResult,
+    freelanceSourcesResult,
+    currentMonthResult,
+    nextMonthResult,
+    upcomingResult,
+  ] =
     await Promise.all([
       supabase
         .from("income_sources")
         .select("id, name")
         .eq("is_active", true)
         .order("name"),
+      supabase
+        .from("income_sources")
+        .select(
+          "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
+        )
+        .eq("category", "freelance")
+        .eq("is_active", true),
       supabase
         .from("work_logs")
         .select(
@@ -112,6 +125,7 @@ export default async function DashboardPage() {
     ]);
 
   const incomeSources = sourcesResult.data ?? [];
+  const freelanceSources = freelanceSourcesResult.data ?? [];
   const upcomingLogs = (upcomingResult.data ?? []) as unknown as WorkLog[];
 
   return (
@@ -144,7 +158,10 @@ export default async function DashboardPage() {
 
       <UpcomingShifts logs={upcomingLogs} />
 
-      <QuickAddModal incomeSources={incomeSources} />
+      <DashboardQuickActions
+        incomeSources={incomeSources}
+        freelanceSources={freelanceSources}
+      />
     </div>
   );
 }

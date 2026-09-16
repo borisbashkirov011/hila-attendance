@@ -4,9 +4,11 @@ import { calculateTaxBreakdown } from "@/lib/utils/tax-calculations";
 import TaxCalculatorCards from "@/components/TaxCalculatorCards";
 import MonthToggle from "@/components/MonthToggle";
 import AddReceiptButton from "@/components/AddReceiptButton";
+import AddExpenseButton from "@/components/AddExpenseButton";
 import ReceiptRow from "@/components/ReceiptRow";
 import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
 import { getReceipts } from "@/app/actions/receiptActions";
+import { getExpenses } from "@/app/actions/expenseActions";
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -110,6 +112,12 @@ export default async function TaxesPage({
 
   const freelanceSources = sourcesData ?? [];
 
+  const expenses = await getExpenses();
+  const totalExpenses = expenses.reduce(
+    (sum, exp) => sum + (Number(exp.amount) || 0),
+    0
+  );
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -119,6 +127,7 @@ export default async function TaxesPage({
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <AddReceiptButton initialDate={toDateOnlyString(now)} sources={freelanceSources} />
+          <AddExpenseButton initialDate={toDateOnlyString(now)} />
           <MonthToggle
             selected={selectedMonth}
             options={MONTH_OPTIONS.map((option) => ({
@@ -149,6 +158,49 @@ export default async function TaxesPage({
                 receipt={receipt}
                 sources={freelanceSources}
               />
+            ))}
+        </ul>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          הוצאות מוכרות
+        </h2>
+        <div className="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 dark:border-orange-900/40 dark:bg-orange-950/30">
+          <span className="text-sm font-medium text-orange-800 dark:text-orange-300">
+            סה״כ הוצאות מוכרות השנה
+          </span>
+          <span className="text-xl font-bold text-orange-700 dark:text-orange-300">
+            ₪{totalExpenses.toLocaleString()}
+          </span>
+        </div>
+        <ul className="flex flex-col gap-2">
+          {Array.isArray(expenses) &&
+            expenses.map((expense) => (
+              <li
+                key={expense.id}
+                className="flex items-center justify-between gap-3 rounded-md border border-black/10 px-3 py-2 text-sm dark:border-white/10"
+              >
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  {expense.expense_date}
+                </span>
+                <span className="flex-1 text-zinc-900 dark:text-zinc-50">
+                  {expense.supplier_name}
+                </span>
+                <span className="text-zinc-900 dark:text-zinc-50">
+                  ₪{Number(expense.amount).toLocaleString()}
+                </span>
+                {expense.file_url && (
+                  <a
+                    href={expense.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline dark:text-blue-400"
+                  >
+                    קובץ
+                  </a>
+                )}
+              </li>
             ))}
         </ul>
       </div>
