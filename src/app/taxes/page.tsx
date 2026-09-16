@@ -1,10 +1,14 @@
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { toDateOnlyString } from "@/lib/utils/payment-dates";
 import { calculateTaxBreakdown } from "@/lib/utils/tax-calculations";
 import TaxCalculatorCards from "@/components/TaxCalculatorCards";
 import MonthToggle from "@/components/MonthToggle";
-import AddReceiptButton from "@/components/AddReceiptButton";
 import { getReceipts } from "@/app/actions/receiptActions";
+
+const AddReceiptButton = dynamic(() => import("@/components/AddReceiptButton"), {
+  ssr: false,
+});
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
