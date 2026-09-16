@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { addReceipt, uploadReceiptFile } from "@/app/actions/receiptActions";
@@ -20,12 +20,7 @@ export default function AddReceiptModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
   const initialMonth = useMemo(() => initialDate.slice(0, 7), [initialDate]);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -53,8 +48,6 @@ export default function AddReceiptModal({
       }
     });
   }
-
-  if (!isMounted) return null;
 
   return (
     <div
