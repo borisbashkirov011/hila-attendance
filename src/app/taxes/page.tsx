@@ -4,6 +4,7 @@ import { calculateTaxBreakdown } from "@/lib/utils/tax-calculations";
 import TaxCalculatorCards from "@/components/TaxCalculatorCards";
 import MonthToggle from "@/components/MonthToggle";
 import AddReceiptButton from "@/components/AddReceiptButton";
+import ReceiptRow from "@/components/ReceiptRow";
 import { getReceipts } from "@/app/actions/receiptActions";
 
 function startOfMonth(date: Date): Date {
@@ -128,25 +129,14 @@ export default async function TaxesPage({
           קבלות ({now.getFullYear()})
         </h2>
         <ul className="flex flex-col gap-2">
-          {Array.isArray(receipts) && receipts.map((receipt) => (
-            <li
-              key={receipt.id}
-              className="flex flex-col gap-1 rounded-md border border-black/10 p-3 text-sm dark:border-white/20"
-            >
-              <span>{receipt.receipt_date} · {receipt.client_type} · {receipt.for_month}</span>
-              <span>₪{receipt.amount}</span>
-              {receipt.file_url && (
-                <a
-                  href={receipt.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline dark:text-blue-400"
-                >
-                  קובץ מצורף
-                </a>
-              )}
-            </li>
-          ))}
+          {Array.isArray(receipts) &&
+            receipts.map((receipt) => (
+              <ReceiptRow
+                key={receipt.id}
+                receipt={receipt}
+                sources={freelanceSources}
+              />
+            ))}
         </ul>
       </div>
     </div>

@@ -110,6 +110,122 @@ export async function addReceipt(
   }
 }
 
+export async function deleteReceipt(id: string): Promise<ActionResult<null>> {
+  try {
+    const supabase = await createClient();
+
+    const { data: receipt } = await supabase
+      .from("receipts")
+      .select("file_url")
+      .eq("id", id)
+      .single();
+
+    const { error } = await supabase.from("receipts").delete().eq("id", id);
+
+    if (error) {
+      console.error("deleteReceipt error:", error);
+      return { success: false, error: `שגיאה במחיקת הקבלה: ${error.message}` };
+    }
+
+    if (receipt?.file_url) {
+      const filePath = receipt.file_url.split("/receipts/").pop();
+      if (filePath) {
+        await supabase.storage.from("receipts").remove([filePath]);
+      }
+    }
+
+    return { success: true, data: null };
+  } catch (err) {
+    console.error("deleteReceipt exception:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "שגיאה לא ידועה במחיקת הקבלה",
+    };
+  }
+}
+
+export type ReceiptUpdateData = {
+  receipt_date?: string;
+  source_id?: string;
+  for_month?: string;
+  amount?: number;
+};
+
+export async function updateReceipt(
+  id: string,
+  data: ReceiptUpdateData
+): Promise<ActionResult<null>> {
+  try {
+    const supabase = await createClient();
+
+    const updatePayload: Record<string, unknown> = { ...data };
+
+    if (data.source_id || data.for_month) {
+      const { data: existing, error: existingError } = await supabase
+        .from("receipts")
+        .select("source_id, for_month")
+        .eq("id", id)
+        .single();
+
+      if (existingError || !existing) {
+        console.error("updateReceipt existingError:", existingError);
+        return {
+          success: false,
+          error: `הקבלה לא נמצאה: ${existingError?.message ?? "not found"}`,
+        };
+      }
+
+      const sourceId = data.source_id ?? existing.source_id;
+      const forMonth = data.for_month ?? existing.for_month;
+
+      const { data: source, error: sourceError } = await supabase
+        .from("income_sources")
+        .select("name, payment_mode, payment_offset_days")
+        .eq("id", sourceId)
+        .single();
+
+      if (sourceError || !source) {
+        console.error("updateReceipt sourceError:", sourceError);
+        return {
+          success: false,
+          error: `מקור ההכנסה לא נמצא: ${sourceError?.message ?? "not found"}`,
+        };
+      }
+
+      const [forYear, forMonthNum] = forMonth.split("-").map(Number);
+      const forMonthDate = new Date(forYear, forMonthNum - 1, 1);
+      const expectedPaymentDate = calculateExpectedPaymentDate(
+        forMonthDate,
+        source.payment_mode,
+        source.payment_offset_days
+      );
+
+      updatePayload.client_type = source.name;
+      updatePayload.expected_payment_month = toDateOnlyString(
+        expectedPaymentDate
+      ).slice(0, 7);
+    }
+
+    const { error } = await supabase
+      .from("receipts")
+      .update(updatePayload)
+      .eq("id", id);
+
+    if (error) {
+      console.error("updateReceipt error:", error);
+      return { success: false, error: `שגיאה בעדכון הקבלה: ${error.message}` };
+    }
+
+    return { success: true, data: null };
+  } catch (err) {
+    console.error("updateReceipt exception:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "שגיאה לא ידועה בעדכון הקבלה",
+    };
+  }
+}
+
 export async function getReceipts(year: number) {
   try {
     const supabase = await createClient();

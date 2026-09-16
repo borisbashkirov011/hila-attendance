@@ -3,25 +3,43 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
-import { addReceipt, uploadReceiptFile } from "@/app/actions/receiptActions";
+import {
+  addReceipt,
+  updateReceipt,
+  uploadReceiptFile,
+} from "@/app/actions/receiptActions";
 import type { IncomeSource } from "@/lib/types/income-source";
+
+export type EditableReceipt = {
+  id: string;
+  receipt_date: string;
+  source_id: string;
+  for_month: string;
+  amount: number;
+};
 
 export default function AddReceiptModal({
   initialDate,
   sources,
+  receipt,
   onClose,
 }: {
   initialDate: string;
   sources: IncomeSource[];
+  receipt?: EditableReceipt;
   onClose: () => void;
 }) {
+  const isEditing = Boolean(receipt);
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const initialMonth = useMemo(() => initialDate.slice(0, 7), [initialDate]);
+  const initialMonth = useMemo(
+    () => (receipt ? receipt.for_month : initialDate.slice(0, 7)),
+    [receipt, initialDate]
+  );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,16 +58,23 @@ export default function AddReceiptModal({
         fileUrl = uploadResult.data;
       }
 
-      const addResult = await addReceipt({
-        receipt_date: String(formData.get("receipt_date")),
-        source_id: String(formData.get("source_id")),
-        for_month: String(formData.get("for_month")),
-        amount: Number(formData.get("amount")),
-        file_url: fileUrl,
-      });
+      const result = isEditing
+        ? await updateReceipt(receipt!.id, {
+            receipt_date: String(formData.get("receipt_date")),
+            source_id: String(formData.get("source_id")),
+            for_month: String(formData.get("for_month")),
+            amount: Number(formData.get("amount")),
+          })
+        : await addReceipt({
+            receipt_date: String(formData.get("receipt_date")),
+            source_id: String(formData.get("source_id")),
+            for_month: String(formData.get("for_month")),
+            amount: Number(formData.get("amount")),
+            file_url: fileUrl,
+          });
 
-      if (!addResult.success) {
-        alert(addResult.error);
+      if (!result.success) {
+        alert(result.error);
         return;
       }
 
@@ -66,7 +91,7 @@ export default function AddReceiptModal({
     >
       <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-lg dark:bg-zinc-900">
         <h3 className="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-50">
-          הוספת קבלה
+          {isEditing ? "עריכת קבלה" : "הוספת קבלה"}
         </h3>
         <form
           ref={formRef}
@@ -81,7 +106,7 @@ export default function AddReceiptModal({
               id="receipt_date"
               name="receipt_date"
               type="date"
-              defaultValue={initialDate}
+              defaultValue={receipt ? receipt.receipt_date : initialDate}
               required
               className="h-11 rounded-md border border-black/10 px-3 text-sm dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-50"
             />
@@ -95,7 +120,7 @@ export default function AddReceiptModal({
               id="source_id"
               name="source_id"
               required
-              defaultValue=""
+              defaultValue={receipt ? receipt.source_id : ""}
               className="h-11 rounded-md border border-black/10 px-3 text-sm dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-50"
             >
               <option value="" disabled>
@@ -132,6 +157,7 @@ export default function AddReceiptModal({
               name="amount"
               type="number"
               step="0.01"
+              defaultValue={receipt ? receipt.amount : undefined}
               required
               className="h-11 rounded-md border border-black/10 px-3 text-sm dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-50"
             />
@@ -178,7 +204,7 @@ export default function AddReceiptModal({
               disabled={isPending}
               className="flex h-11 flex-1 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
             >
-              {isPending ? "שומר..." : "שמירה"}
+              {isPending ? "שומר..." : isEditing ? "עדכון" : "שמירה"}
             </button>
             <button
               type="button"
