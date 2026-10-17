@@ -9,6 +9,7 @@ import {
   uploadReceiptFile,
 } from "@/app/actions/receiptActions";
 import type { IncomeSource } from "@/lib/types/income-source";
+import MonthPicker from "@/components/MonthPicker";
 
 export type EditableReceipt = {
   id: string;
@@ -139,14 +140,7 @@ export default function AddReceiptModal({
             <label htmlFor="for_month" className="text-sm text-zinc-700 dark:text-zinc-300">
               עבור חודש
             </label>
-            <input
-              id="for_month"
-              name="for_month"
-              type="month"
-              defaultValue={initialMonth}
-              required
-              className="h-11 rounded-md border border-black/10 px-3 text-sm dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-50"
-            />
+            <MonthPicker id="for_month" name="for_month" defaultValue={initialMonth} />
           </div>
 
           <div className="flex flex-col gap-1">
