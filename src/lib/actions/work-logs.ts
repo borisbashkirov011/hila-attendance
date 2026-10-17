@@ -13,6 +13,8 @@ export type LogWorkSessionInput = {
   workDate: string; // 'YYYY-MM-DD'
   hoursWorked?: number;
   grossAmount?: number; // overrides hoursWorked * default_hourly_rate
+  paymentDate?: string; // 'YYYY-MM-DD', required for 'manual' payment sources
+  description?: string;
 };
 
 function revalidateWorkLogPaths() {
@@ -52,22 +54,32 @@ async function computeWorkLogFields(
       : 0;
   const netAmount = grossAmount - taxPensionAmount;
 
-  const [year, month, day] = input.workDate.split("-").map(Number);
-  const workDate = new Date(year, month - 1, day);
-  const expectedPaymentDate = calculateExpectedPaymentDate(
-    workDate,
-    source.payment_mode,
-    source.payment_offset_days
-  );
+  let expectedPaymentDate: string;
+  if (source.payment_mode === "manual") {
+    if (!input.paymentDate) {
+      throw new Error("יש להזין תאריך תשלום לעבודה זו.");
+    }
+    expectedPaymentDate = input.paymentDate;
+  } else {
+    const [year, month, day] = input.workDate.split("-").map(Number);
+    expectedPaymentDate = toDateOnlyString(
+      calculateExpectedPaymentDate(
+        new Date(year, month - 1, day),
+        source.payment_mode,
+        source.payment_offset_days
+      )
+    );
+  }
 
   return {
     source_id: input.sourceId,
     work_date: input.workDate,
+    description: input.description ?? null,
     hours_worked: input.hoursWorked ?? null,
     gross_amount: grossAmount,
     tax_pension_amount: taxPensionAmount,
     net_amount: netAmount,
-    expected_payment_date: toDateOnlyString(expectedPaymentDate),
+    expected_payment_date: expectedPaymentDate,
   };
 }
 
@@ -118,6 +130,8 @@ function parseWorkLogFormData(
   const workDate = formData.get("work_date");
   const hoursWorkedRaw = formData.get("hours_worked");
   const grossAmountRaw = formData.get("gross_amount");
+  const paymentDateRaw = formData.get("payment_date");
+  const descriptionRaw = formData.get("description");
 
   if (typeof sourceId !== "string" || !sourceId) {
     return { error: "יש לבחור מקור הכנסה." };
@@ -146,7 +160,19 @@ function parseWorkLogFormData(
     return { error: "יש להזין שעות עבודה או סכום ברוטו." };
   }
 
-  return { data: { sourceId, workDate, hoursWorked, grossAmount } };
+  const paymentDate =
+    typeof paymentDateRaw === "string" && paymentDateRaw !== "" ? paymentDateRaw : undefined;
+  if (paymentDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(paymentDate)) {
+    return { error: "יש להזין תאריך תשלום תקין." };
+  }
+  const description =
+    typeof descriptionRaw === "string" && descriptionRaw.trim()
+      ? descriptionRaw.trim()
+      : undefined;
+
+  return {
+    data: { sourceId, workDate, hoursWorked, grossAmount, paymentDate, description },
+  };
 }
 
 export async function logWorkSessionAction(

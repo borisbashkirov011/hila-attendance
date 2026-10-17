@@ -10,7 +10,8 @@ import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
 import { formatCurrency } from "@/lib/utils/format";
 import { getReceiptsForPaymentMonth, getReceiptsForYear } from "@/lib/data/receipts";
 import { getExpensesForYear } from "@/lib/data/expenses";
-import type { IncomeSource } from "@/lib/types/income-source";
+import { INCOME_SOURCE_COLUMNS, type IncomeSource } from "@/lib/types/income-source";
+import { getPaymentEntries } from "@/lib/data/payment-schedule";
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -26,11 +27,6 @@ function monthLabel(date: Date): string {
     year: "numeric",
   }).format(date);
 }
-
-type MonthLogRow = {
-  gross_amount: number;
-  income_sources: { category: "employee" | "freelance" } | null;
-};
 
 const MONTH_OPTIONS = ["current", "next", "two_ahead"] as const;
 type MonthOption = (typeof MONTH_OPTIONS)[number];
@@ -75,22 +71,16 @@ export default async function TaxesPage({
   const year = now.getFullYear();
 
   const [
-    { data },
+    paymentEntries,
     { data: sourcesData },
     receipts,
     targetMonthReceipts,
     expenses,
   ] = await Promise.all([
-    supabase
-      .from("work_logs")
-      .select("gross_amount, income_sources(category)")
-      .gte("expected_payment_date", monthStart)
-      .lte("expected_payment_date", monthEnd),
+    getPaymentEntries(monthStart, monthEnd),
     supabase
       .from("income_sources")
-      .select(
-        "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
-      )
+      .select(INCOME_SOURCE_COLUMNS)
       .eq("category", "freelance")
       .eq("is_active", true),
     getReceiptsForYear(year),
@@ -98,12 +88,10 @@ export default async function TaxesPage({
     getExpensesForYear(year),
   ]);
 
-  const rows = (data ?? []) as unknown as MonthLogRow[];
-
-  const totals = rows.reduce(
-    (acc, row) => {
-      const gross = Number(row.gross_amount);
-      if (row.income_sources?.category === "freelance") {
+  const totals = paymentEntries.reduce(
+    (acc, entry) => {
+      const gross = entry.gross;
+      if (entry.category === "freelance") {
         acc.freelance += gross;
       } else {
         acc.employee += gross;

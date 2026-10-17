@@ -1,24 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
 import IncomeSourceManager from "@/components/IncomeSourceManager";
 import CalendarSyncButton from "@/components/CalendarSyncButton";
-import type { IncomeSource } from "@/lib/types/income-source";
+import {
+  INCOME_SOURCE_COLUMNS,
+  type HourQuotaOverride,
+  type IncomeSource,
+} from "@/lib/types/income-source";
 import { computeAuthToken } from "@/lib/auth";
 import { logoutAction } from "@/lib/actions/auth";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const [{ data }, feedToken] = await Promise.all([
+  const [{ data }, { data: quotasData }, feedToken] = await Promise.all([
     supabase
       .from("income_sources")
-      .select(
-        "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
-      )
+      .select(INCOME_SOURCE_COLUMNS)
       .order("name"),
+    supabase
+      .from("source_hour_quotas")
+      .select("id, source_id, month, hours")
+      .order("month"),
     computeAuthToken(),
   ]);
 
   const incomeSources = (data ?? []) as IncomeSource[];
+  const quotaOverrides = (quotasData ?? []) as HourQuotaOverride[];
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-8">
@@ -27,7 +34,10 @@ export default async function SettingsPage() {
       </h1>
 
       <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-zinc-900">
-        <IncomeSourceManager incomeSources={incomeSources} />
+        <IncomeSourceManager
+          incomeSources={incomeSources}
+          quotaOverrides={quotaOverrides}
+        />
       </div>
 
       <div className="rounded-3xl bg-gradient-to-br from-rose-100/80 via-orange-50/60 to-rose-50/80 p-5 shadow-sm">

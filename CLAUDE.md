@@ -24,6 +24,8 @@ This is an "Attendance & Income Tracker" micro-service designed for a clinical d
   - `immediate`: Paid on the same day.
   - `specific_day`: Paid on a specific day of the following month (e.g., 7th).
   - `eom_plus_days`: Paid on day `payment_offset_days` of the month after next (UI label "בעוד חודשיים"). Day is clamped to month length.
+  - `manual`: one-off jobs (UGC); payment date entered per work log (`expected_payment_date`).
+- **Standard hours (תקן):** `income_sources.standard_hours` default + `source_hour_quotas` per-month overrides. Hours beyond the month's quota are paid 1 month after the regular payment date — computed at read time in `src/lib/utils/payment-schedule.ts` (`getPaymentEntries` in `src/lib/data/payment-schedule.ts`); totals must use it, not raw `expected_payment_date`.
 
 ## Project Structure
 - `src/app/page.tsx`: The main Dashboard Server Component. Fetches summary metrics (Gross, Net, Tax/Pension Bucket) and recent work logs.
@@ -36,10 +38,12 @@ This is an "Attendance & Income Tracker" micro-service designed for a clinical d
 
 ## Supabase Schema
 Main tables in the PostgreSQL database:
-1. `income_sources`: `id`, `name`, `category` ('employee', 'freelance'), `payment_mode`, `payment_offset_days`, `default_hourly_rate`, `tax_pension_rate` (e.g., 0.30).
-2. `work_logs`: `id`, `source_id` (FK), `work_date`, `hours_worked`, `gross_amount`, `tax_pension_amount`, `net_amount`, `expected_payment_date`, `status` ('pending', 'paid').
+1. `income_sources`: `id`, `name`, `category` ('employee', 'freelance'), `payment_mode`, `payment_offset_days`, `default_hourly_rate`, `tax_pension_rate` (e.g., 0.30), `standard_hours`.
+2. `work_logs`: `id`, `source_id` (FK), `work_date`, `description`, `hours_worked`, `gross_amount`, `tax_pension_amount`, `net_amount`, `expected_payment_date`, `status` ('pending', 'paid').
 3. `receipts`: `id`, `receipt_date`, `source_id`, `client_type`, `for_month` ('YYYY-MM'), `expected_payment_month`, `amount`, `file_url` (bucket `receipts`).
 4. `expenses`: `id`, `expense_date`, `supplier_name`, `amount`, `file_url` (bucket `expenses`).
+5. `source_hour_quotas`: `id`, `source_id`, `month` ('YYYY-MM'), `hours` (unique per source+month).
+- Migrations live in `supabase/migrations/` and are run manually in the Supabase SQL editor.
 ## Session Management & Save State
 - **Initialization:** When starting a new chat, ALWAYS silently read `STATE.md` first to understand the current project status and pending tasks before writing any code.
 - **Wrap up:** If the user says "wrap up", "save state", or "סיימנו להיום", you must automatically overwrite `STATE.md`. Create a highly concise, technical bullet-point summary of the current architecture, what was completed in this session, and the exact next steps. Do not wait for a detailed prompt.

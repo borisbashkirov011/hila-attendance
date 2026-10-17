@@ -1,4 +1,6 @@
-export type PaymentMode = "immediate" | "specific_day" | "eom_plus_days";
+import type { PaymentMode } from "@/lib/types/income-source";
+
+export type { PaymentMode };
 
 export function toDateOnlyString(date: Date): string {
   const year = date.getFullYear();
@@ -14,6 +16,12 @@ function dateInMonth(year: number, monthIndex: number, day: number): Date {
   return new Date(year, monthIndex, Math.min(day, lastDay));
 }
 
+// Shifts a 'YYYY-MM-DD' date by `months`, keeping the day (clamped to month length).
+export function addMonthsClamped(dateString: string, months: number): Date {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return dateInMonth(year, month - 1 + months, day);
+}
+
 export function calculateExpectedPaymentDate(
   workDate: Date,
   paymentMode: PaymentMode,
@@ -21,6 +29,7 @@ export function calculateExpectedPaymentDate(
 ): Date {
   switch (paymentMode) {
     case "immediate":
+    case "manual":
       return new Date(workDate);
 
     case "specific_day":

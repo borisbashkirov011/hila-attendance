@@ -7,11 +7,8 @@ import { getShiftStatus } from "@/lib/utils/shift-status";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import LogSessionForm from "@/components/LogSessionForm";
 import type { WorkLog } from "@/lib/types/work-log";
+import type { IncomeSourceOption } from "@/lib/types/income-source";
 
-type IncomeSourceOption = {
-  id: string;
-  name: string;
-};
 
 type FormTarget =
   | { mode: "add"; workDate: string }
@@ -134,7 +131,8 @@ export default function CalendarClient({
                     className="flex items-center justify-between gap-2 rounded-md border border-black/10 p-2 text-sm dark:border-white/10"
                   >
                     <span className="truncate">
-                      {log.income_sources?.name ?? "משמרת"} · {formatCurrency(Number(log.net_amount))}
+                      {log.income_sources?.name ?? "משמרת"}
+                      {log.description ? ` (${log.description})` : ""} · {formatCurrency(Number(log.net_amount))}
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
                       <button
