@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { toDateOnlyString } from "@/lib/utils/payment-dates";
 import { calculateTaxBreakdown } from "@/lib/utils/tax-calculations";
 import TaxCalculatorCards from "@/components/TaxCalculatorCards";
+import IncomeSourceBreakdown from "@/components/IncomeSourceBreakdown";
 import MonthToggle from "@/components/MonthToggle";
 import AddReceiptButton from "@/components/AddReceiptButton";
 import AddExpenseButton from "@/components/AddExpenseButton";
@@ -119,7 +120,7 @@ export default async function TaxesPage({
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          מיסים וסוציאליות
+          פירוט הכנסות ומיסים
         </h1>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -142,6 +143,11 @@ export default async function TaxesPage({
       <IncomeSummaryWidget />
 
       <TaxCalculatorCards breakdown={breakdown} actualIncome={actualIncome} />
+
+      <IncomeSourceBreakdown
+        entries={paymentEntries}
+        monthLabel={monthLabel(targetDate)}
+      />
 
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">

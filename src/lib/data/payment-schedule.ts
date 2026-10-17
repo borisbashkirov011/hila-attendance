@@ -19,7 +19,7 @@ export const getPaymentEntries = cache(
       supabase
         .from("work_logs")
         .select(
-          "id, source_id, work_date, hours_worked, gross_amount, net_amount, tax_pension_amount, expected_payment_date, created_at, income_sources(category, standard_hours)"
+          "id, source_id, work_date, hours_worked, gross_amount, net_amount, tax_pension_amount, expected_payment_date, created_at, income_sources(name, category, standard_hours)"
         )
         .gte("expected_payment_date", fetchStart)
         .lte("expected_payment_date", end),
