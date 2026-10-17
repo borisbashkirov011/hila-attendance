@@ -17,9 +17,11 @@ export default function AddExpenseModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [fileName, setFileName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
     const formData = new FormData(event.currentTarget);
     startTransition(async () => {
       const file = formData.get("file") as File | null;
@@ -28,7 +30,7 @@ export default function AddExpenseModal({
       if (file && file.size > 0) {
         const uploadResult = await uploadExpenseFile(formData);
         if (!uploadResult.success) {
-          alert(uploadResult.error);
+          setError(uploadResult.error);
           return;
         }
         fileUrl = uploadResult.data;
@@ -42,7 +44,7 @@ export default function AddExpenseModal({
       });
 
       if (!result.success) {
-        alert(result.error);
+        setError(result.error);
         return;
       }
 
@@ -137,6 +139,10 @@ export default function AddExpenseModal({
               <span>{fileName ?? "לחצו להעלאת קובץ (תמונה או PDF)"}</span>
             </div>
           </div>
+
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
 
           <div className="flex gap-2">
             <button

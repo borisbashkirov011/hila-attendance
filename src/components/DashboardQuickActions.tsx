@@ -69,7 +69,10 @@ export default function DashboardQuickActions({
             >
               ✕
             </button>
-            <LogSessionForm incomeSources={incomeSources} />
+            <LogSessionForm
+              incomeSources={incomeSources}
+              onSuccess={() => setOpenModal(null)}
+            />
           </div>
         </div>
       )}

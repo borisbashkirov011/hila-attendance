@@ -54,12 +54,22 @@ export async function uploadExpenseFile(
 export async function addExpense(
   data: ExpenseData
 ): Promise<ActionResult<null>> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.expense_date)) {
+    return { success: false, error: "יש לבחור תאריך תקין." };
+  }
+  if (!data.supplier_name.trim()) {
+    return { success: false, error: "יש להזין ספק / תיאור." };
+  }
+  if (!Number.isFinite(data.amount) || data.amount <= 0) {
+    return { success: false, error: "יש להזין סכום תקין." };
+  }
+
   try {
     const supabase = await createClient();
 
     const { error } = await supabase.from("expenses").insert({
       expense_date: data.expense_date,
-      supplier_name: data.supplier_name,
+      supplier_name: data.supplier_name.trim(),
       amount: data.amount,
       file_url: data.file_url,
     });
@@ -76,26 +86,5 @@ export async function addExpense(
       success: false,
       error: err instanceof Error ? err.message : String(err),
     };
-  }
-}
-
-export async function getExpenses() {
-  try {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("expenses")
-      .select("*")
-      .order("expense_date", { ascending: false });
-
-    if (error) {
-      console.error("getExpenses error:", error);
-      return [];
-    }
-
-    return data || [];
-  } catch (err) {
-    console.error("getExpenses exception:", err);
-    return [];
   }
 }

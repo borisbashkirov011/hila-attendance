@@ -5,22 +5,14 @@ import { useRouter } from "next/navigation";
 import AddReceiptModal from "@/components/AddReceiptModal";
 import { deleteReceipt } from "@/app/actions/receiptActions";
 import type { IncomeSource } from "@/lib/types/income-source";
-
-export type ReceiptRowData = {
-  id: string;
-  receipt_date: string;
-  source_id: string;
-  client_type: string;
-  for_month: string;
-  amount: number;
-  file_url: string | null;
-};
+import type { Receipt } from "@/lib/data/receipts";
+import { formatCurrency } from "@/lib/utils/format";
 
 export default function ReceiptRow({
   receipt,
   sources,
 }: {
-  receipt: ReceiptRowData;
+  receipt: Receipt;
   sources: IncomeSource[];
 }) {
   const router = useRouter();
@@ -33,7 +25,7 @@ export default function ReceiptRow({
     startTransition(async () => {
       const result = await deleteReceipt(receipt.id);
       if (!result.success) {
-        alert(result.error);
+        window.alert(result.error);
         return;
       }
       router.refresh();
@@ -45,7 +37,7 @@ export default function ReceiptRow({
       <span>
         {receipt.receipt_date} · {receipt.client_type} · {receipt.for_month}
       </span>
-      <span>₪{receipt.amount}</span>
+      <span>{formatCurrency(Number(receipt.amount))}</span>
       {receipt.file_url && (
         <a
           href={receipt.file_url}

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { deleteWorkLogAction } from "@/lib/actions/work-logs";
 import { getMonthGridDates } from "@/lib/utils/calendar";
 import { getShiftStatus } from "@/lib/utils/shift-status";
-import { formatDate } from "@/lib/utils/format";
+import { formatCurrency, formatDate } from "@/lib/utils/format";
 import LogSessionForm from "@/components/LogSessionForm";
 import type { WorkLog } from "@/lib/types/work-log";
 
@@ -134,7 +134,7 @@ export default function CalendarClient({
                     className="flex items-center justify-between gap-2 rounded-md border border-black/10 p-2 text-sm dark:border-white/10"
                   >
                     <span className="truncate">
-                      {log.income_sources?.name ?? "משמרת"} · ₪{log.net_amount.toFixed(2)}
+                      {log.income_sources?.name ?? "משמרת"} · {formatCurrency(Number(log.net_amount))}
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
                       <button

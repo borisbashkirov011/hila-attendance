@@ -7,8 +7,10 @@ import AddReceiptButton from "@/components/AddReceiptButton";
 import AddExpenseButton from "@/components/AddExpenseButton";
 import ReceiptRow from "@/components/ReceiptRow";
 import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
-import { getReceipts } from "@/app/actions/receiptActions";
-import { getExpenses } from "@/app/actions/expenseActions";
+import { formatCurrency } from "@/lib/utils/format";
+import { getReceiptsForPaymentMonth, getReceiptsForYear } from "@/lib/data/receipts";
+import { getExpensesForYear } from "@/lib/data/expenses";
+import type { IncomeSource } from "@/lib/types/income-source";
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -69,11 +71,32 @@ export default async function TaxesPage({
   const monthStart = toDateOnlyString(startOfMonth(targetDate));
   const monthEnd = toDateOnlyString(endOfMonth(targetDate));
 
-  const { data } = await supabase
-    .from("work_logs")
-    .select("gross_amount, income_sources(category)")
-    .gte("expected_payment_date", monthStart)
-    .lte("expected_payment_date", monthEnd);
+  const targetMonthValue = monthStart.slice(0, 7);
+  const year = now.getFullYear();
+
+  const [
+    { data },
+    { data: sourcesData },
+    receipts,
+    targetMonthReceipts,
+    expenses,
+  ] = await Promise.all([
+    supabase
+      .from("work_logs")
+      .select("gross_amount, income_sources(category)")
+      .gte("expected_payment_date", monthStart)
+      .lte("expected_payment_date", monthEnd),
+    supabase
+      .from("income_sources")
+      .select(
+        "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
+      )
+      .eq("category", "freelance")
+      .eq("is_active", true),
+    getReceiptsForYear(year),
+    getReceiptsForPaymentMonth(targetMonthValue),
+    getExpensesForYear(year),
+  ]);
 
   const rows = (data ?? []) as unknown as MonthLogRow[];
 
@@ -92,27 +115,13 @@ export default async function TaxesPage({
 
   const breakdown = calculateTaxBreakdown(totals.employee, totals.freelance);
 
-  const receipts = await getReceipts(now.getFullYear());
+  const actualIncome = targetMonthReceipts.reduce(
+    (sum, receipt) => sum + (Number(receipt.amount) || 0),
+    0
+  );
 
-  const targetMonthValue = toDateOnlyString(targetDate).slice(0, 7);
-  const receiptsForTargetMonth =
-    targetDate.getFullYear() === now.getFullYear()
-      ? receipts
-      : await getReceipts(targetDate.getFullYear());
+  const freelanceSources = (sourcesData ?? []) as IncomeSource[];
 
-  const actualIncome = receiptsForTargetMonth
-    .filter((receipt) => receipt.expected_payment_month === targetMonthValue)
-    .reduce((sum, receipt) => sum + (Number(receipt.amount) || 0), 0);
-
-  const { data: sourcesData } = await supabase
-    .from("income_sources")
-    .select("id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active")
-    .eq("category", "freelance")
-    .eq("is_active", true);
-
-  const freelanceSources = sourcesData ?? [];
-
-  const expenses = await getExpenses();
   const totalExpenses = expenses.reduce(
     (sum, exp) => sum + (Number(exp.amount) || 0),
     0
@@ -148,11 +157,10 @@ export default async function TaxesPage({
 
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          קבלות ({now.getFullYear()})
+          קבלות ({year})
         </h2>
         <ul className="flex flex-col gap-2">
-          {Array.isArray(receipts) &&
-            receipts.map((receipt) => (
+          {receipts.map((receipt) => (
               <ReceiptRow
                 key={receipt.id}
                 receipt={receipt}
@@ -164,19 +172,18 @@ export default async function TaxesPage({
 
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          הוצאות מוכרות
+          הוצאות מוכרות ({year})
         </h2>
         <div className="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 dark:border-orange-900/40 dark:bg-orange-950/30">
           <span className="text-sm font-medium text-orange-800 dark:text-orange-300">
             סה״כ הוצאות מוכרות השנה
           </span>
           <span className="text-xl font-bold text-orange-700 dark:text-orange-300">
-            ₪{totalExpenses.toLocaleString()}
+            {formatCurrency(totalExpenses)}
           </span>
         </div>
         <ul className="flex flex-col gap-2">
-          {Array.isArray(expenses) &&
-            expenses.map((expense) => (
+          {expenses.map((expense) => (
               <li
                 key={expense.id}
                 className="flex items-center justify-between gap-3 rounded-md border border-black/10 px-3 py-2 text-sm dark:border-white/10"
@@ -188,7 +195,7 @@ export default async function TaxesPage({
                   {expense.supplier_name}
                 </span>
                 <span className="text-zinc-900 dark:text-zinc-50">
-                  ₪{Number(expense.amount).toLocaleString()}
+                  {formatCurrency(Number(expense.amount))}
                 </span>
                 {expense.file_url && (
                   <a

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils/format";
+import { isValidAuthToken } from "@/lib/auth";
 
 function toIcsDate(dateString: string): string {
   return dateString.replace(/-/g, "");
@@ -42,7 +43,12 @@ type FeedRow = {
   income_sources: { name: string } | null;
 };
 
-export async function GET() {
+export async function GET(request: Request) {
+  const token = new URL(request.url).searchParams.get("token");
+  if (!(await isValidAuthToken(token))) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -108,7 +114,7 @@ export async function GET() {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": 'inline; filename="shifts.ics"',
-      "Cache-Control": "public, max-age=1800",
+      "Cache-Control": "private, max-age=1800",
     },
   });
 }
