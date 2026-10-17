@@ -2,16 +2,21 @@ import { createClient } from "@/lib/supabase/server";
 import IncomeSourceManager from "@/components/IncomeSourceManager";
 import CalendarSyncButton from "@/components/CalendarSyncButton";
 import type { IncomeSource } from "@/lib/types/income-source";
+import { computeAuthToken } from "@/lib/auth";
+import { logoutAction } from "@/lib/actions/auth";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("income_sources")
-    .select(
-      "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
-    )
-    .order("name");
+  const [{ data }, feedToken] = await Promise.all([
+    supabase
+      .from("income_sources")
+      .select(
+        "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
+      )
+      .order("name"),
+    computeAuthToken(),
+  ]);
 
   const incomeSources = (data ?? []) as IncomeSource[];
 
@@ -29,12 +34,21 @@ export default async function SettingsPage() {
         <p className="mb-3 text-sm font-semibold tracking-tight text-slate-800">
           סנכרון יומן
         </p>
-        <CalendarSyncButton />
+        <CalendarSyncButton feedPath={`/api/calendar/feed?token=${feedToken}`} />
         <p className="mt-3 text-xs font-medium text-slate-500">
           לחיצה חד-פעמית לסנכרון אוטומטי של כל המשמרות ישירות לאפליקציית
           היומן באייפון.
         </p>
       </div>
+
+      <form action={logoutAction}>
+        <button
+          type="submit"
+          className="flex h-11 items-center justify-center rounded-md border border-black/10 px-4 text-sm font-medium text-zinc-700 dark:border-white/20 dark:text-zinc-300"
+        >
+          התנתקות
+        </button>
+      </form>
     </div>
   );
 }

@@ -1,10 +1,8 @@
-import { getReceipts } from "@/app/actions/receiptActions";
+import { getReceiptsForYear } from "@/lib/data/receipts";
 import TaxProgressBar from "@/components/TaxProgressBar";
 
 export default async function IncomeSummaryWidget() {
-  const now = new Date();
-
-  const receipts = await getReceipts(now.getFullYear());
+  const receipts = await getReceiptsForYear(new Date().getFullYear());
 
   const actualIncome = receipts.reduce(
     (sum, receipt) => sum + (Number(receipt.amount) || 0),

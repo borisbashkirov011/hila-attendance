@@ -56,9 +56,40 @@ export async function uploadReceiptFile(
   }
 }
 
+function validateReceiptFields(data: ReceiptUpdateData): string | null {
+  if (data.receipt_date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(data.receipt_date)) {
+    return "יש לבחור תאריך תקין.";
+  }
+  if (data.for_month !== undefined && !/^\d{4}-\d{2}$/.test(data.for_month)) {
+    return "יש לבחור חודש תקין.";
+  }
+  if (data.source_id !== undefined && !data.source_id) {
+    return "יש לבחור לקוח.";
+  }
+  if (data.amount !== undefined && (!Number.isFinite(data.amount) || data.amount <= 0)) {
+    return "יש להזין סכום תקין.";
+  }
+  return null;
+}
+
+async function removeReceiptFile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  fileUrl: string
+) {
+  const filePath = fileUrl.split("/receipts/").pop();
+  if (filePath) {
+    await supabase.storage.from("receipts").remove([filePath]);
+  }
+}
+
 export async function addReceipt(
   data: ReceiptData
 ): Promise<ActionResult<null>> {
+  const validationError = validateReceiptFields(data);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+
   try {
     const supabase = await createClient();
 
@@ -128,10 +159,7 @@ export async function deleteReceipt(id: string): Promise<ActionResult<null>> {
     }
 
     if (receipt?.file_url) {
-      const filePath = receipt.file_url.split("/receipts/").pop();
-      if (filePath) {
-        await supabase.storage.from("receipts").remove([filePath]);
-      }
+      await removeReceiptFile(supabase, receipt.file_url);
     }
 
     return { success: true, data: null };
@@ -149,31 +177,38 @@ export type ReceiptUpdateData = {
   source_id?: string;
   for_month?: string;
   amount?: number;
+  file_url?: string;
 };
 
 export async function updateReceipt(
   id: string,
   data: ReceiptUpdateData
 ): Promise<ActionResult<null>> {
+  const validationError = validateReceiptFields(data);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+
   try {
     const supabase = await createClient();
 
     const updatePayload: Record<string, unknown> = { ...data };
 
-    if (data.source_id || data.for_month) {
-      const { data: existing, error: existingError } = await supabase
-        .from("receipts")
-        .select("source_id, for_month")
-        .eq("id", id)
-        .single();
+    const { data: existing, error: existingError } = await supabase
+      .from("receipts")
+      .select("source_id, for_month, file_url")
+      .eq("id", id)
+      .single();
 
-      if (existingError || !existing) {
-        console.error("updateReceipt existingError:", existingError);
-        return {
-          success: false,
-          error: `הקבלה לא נמצאה: ${existingError?.message ?? "not found"}`,
-        };
-      }
+    if (existingError || !existing) {
+      console.error("updateReceipt existingError:", existingError);
+      return {
+        success: false,
+        error: `הקבלה לא נמצאה: ${existingError?.message ?? "not found"}`,
+      };
+    }
+
+    if (data.source_id || data.for_month) {
 
       const sourceId = data.source_id ?? existing.source_id;
       const forMonth = data.for_month ?? existing.for_month;
@@ -216,6 +251,11 @@ export async function updateReceipt(
       return { success: false, error: `שגיאה בעדכון הקבלה: ${error.message}` };
     }
 
+    // A new file replaced the old one — drop the old file from storage.
+    if (data.file_url && existing.file_url && existing.file_url !== data.file_url) {
+      await removeReceiptFile(supabase, existing.file_url);
+    }
+
     return { success: true, data: null };
   } catch (err) {
     console.error("updateReceipt exception:", err);
@@ -223,28 +263,5 @@ export async function updateReceipt(
       success: false,
       error: err instanceof Error ? err.message : "שגיאה לא ידועה בעדכון הקבלה",
     };
-  }
-}
-
-export async function getReceipts(year: number) {
-  try {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("receipts")
-      .select("*")
-      .gte("for_month", `${year}-01`)
-      .lte("for_month", `${year}-12`)
-      .order("receipt_date", { ascending: false });
-
-    if (error) {
-      console.error("getReceipts error:", error);
-      return [];
-    }
-
-    return data || [];
-  } catch (err) {
-    console.error("getReceipts exception:", err);
-    return [];
   }
 }

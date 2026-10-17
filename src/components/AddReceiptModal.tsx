@@ -52,7 +52,7 @@ export default function AddReceiptModal({
       if (file && file.size > 0) {
         const uploadResult = await uploadReceiptFile(formData);
         if (!uploadResult.success) {
-          alert(uploadResult.error);
+          setError(uploadResult.error);
           return;
         }
         fileUrl = uploadResult.data;
@@ -64,6 +64,7 @@ export default function AddReceiptModal({
             source_id: String(formData.get("source_id")),
             for_month: String(formData.get("for_month")),
             amount: Number(formData.get("amount")),
+            file_url: fileUrl,
           })
         : await addReceipt({
             receipt_date: String(formData.get("receipt_date")),
@@ -74,7 +75,7 @@ export default function AddReceiptModal({
           });
 
       if (!result.success) {
-        alert(result.error);
+        setError(result.error);
         return;
       }
 

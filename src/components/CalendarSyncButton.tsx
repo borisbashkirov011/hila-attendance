@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 
-export default function CalendarSyncButton() {
+export default function CalendarSyncButton({ feedPath }: { feedPath: string }) {
   const [copied, setCopied] = useState(false);
 
   function handleClick() {
     if (typeof window === "undefined") return;
 
-    const httpUrl = `${window.location.origin}/api/calendar/feed`;
+    const httpUrl = `${window.location.origin}${feedPath}`;
     const webcalUrl = httpUrl.replace(/^https?:\/\//, "webcal://");
 
     const isIOS = /iPad|iPhone|iPod/.test(window.navigator.userAgent);

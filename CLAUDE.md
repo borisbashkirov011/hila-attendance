@@ -23,18 +23,23 @@ This is an "Attendance & Income Tracker" micro-service designed for a clinical d
 - **Payment Terms (`payment_mode`):**
   - `immediate`: Paid on the same day.
   - `specific_day`: Paid on a specific day of the following month (e.g., 7th).
-  - `eom_plus_days`: Paid at the end of the current month + offset days (e.g., net+40).
+  - `eom_plus_days`: Paid on day `payment_offset_days` of the month after next (UI label "בעוד חודשיים"). Day is clamped to month length.
 
 ## Project Structure
 - `src/app/page.tsx`: The main Dashboard Server Component. Fetches summary metrics (Gross, Net, Tax/Pension Bucket) and recent work logs.
 - `src/components/LogSessionForm.tsx`: Client Component using `useActionState`. Allows inputting either `hours_worked` or a flat `gross_amount`.
 - `src/lib/actions/work-logs.ts`: Contains the Server Actions (e.g., `logWorkSessionAction`). Calculates deductions, net amount, and the `expected_payment_date` based on the selected `income_source`.
 - `src/lib/utils/payment-dates.ts`: Utility functions for calculating precise local payment dates.
+- `src/app/actions/receiptActions.ts`, `expenseActions.ts`: Server Actions (mutations only) for `receipts` / `expenses` + Supabase Storage uploads.
+- `src/lib/data/`: request-cached read helpers (`getReceiptsForYear`, `getReceiptsForPaymentMonth`, `getExpensesForYear`). Keep reads out of `"use server"` files.
+- `src/proxy.ts` + `src/lib/auth.ts`: passcode gate (cookie `hila_auth`). `/api/calendar/feed` requires `?token=`.
 
 ## Supabase Schema
-Two main tables in the PostgreSQL database:
+Main tables in the PostgreSQL database:
 1. `income_sources`: `id`, `name`, `category` ('employee', 'freelance'), `payment_mode`, `payment_offset_days`, `default_hourly_rate`, `tax_pension_rate` (e.g., 0.30).
 2. `work_logs`: `id`, `source_id` (FK), `work_date`, `hours_worked`, `gross_amount`, `tax_pension_amount`, `net_amount`, `expected_payment_date`, `status` ('pending', 'paid').
+3. `receipts`: `id`, `receipt_date`, `source_id`, `client_type`, `for_month` ('YYYY-MM'), `expected_payment_month`, `amount`, `file_url` (bucket `receipts`).
+4. `expenses`: `id`, `expense_date`, `supplier_name`, `amount`, `file_url` (bucket `expenses`).
 ## Session Management & Save State
 - **Initialization:** When starting a new chat, ALWAYS silently read `STATE.md` first to understand the current project status and pending tasks before writing any code.
 - **Wrap up:** If the user says "wrap up", "save state", or "סיימנו להיום", you must automatically overwrite `STATE.md`. Create a highly concise, technical bullet-point summary of the current architecture, what was completed in this session, and the exact next steps. Do not wait for a detailed prompt.

@@ -5,6 +5,7 @@ import UpcomingShifts from "@/components/UpcomingShifts";
 import DashboardQuickActions from "@/components/DashboardQuickActions";
 import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
 import type { WorkLog } from "@/lib/types/work-log";
+import type { IncomeSource } from "@/lib/types/income-source";
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -80,26 +81,15 @@ export default async function DashboardPage() {
   const nextMonthStart = toDateOnlyString(startOfMonth(nextMonthDate));
   const nextMonthEnd = toDateOnlyString(endOfMonth(nextMonthDate));
 
-  const [
-    sourcesResult,
-    freelanceSourcesResult,
-    currentMonthResult,
-    nextMonthResult,
-    upcomingResult,
-  ] =
+  const [sourcesResult, currentMonthResult, nextMonthResult, upcomingResult] =
     await Promise.all([
-      supabase
-        .from("income_sources")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name"),
       supabase
         .from("income_sources")
         .select(
           "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
         )
-        .eq("category", "freelance")
-        .eq("is_active", true),
+        .eq("is_active", true)
+        .order("name"),
       supabase
         .from("work_logs")
         .select(
@@ -124,8 +114,11 @@ export default async function DashboardPage() {
         .limit(5),
     ]);
 
-  const incomeSources = sourcesResult.data ?? [];
-  const freelanceSources = freelanceSourcesResult.data ?? [];
+  const activeSources = (sourcesResult.data ?? []) as IncomeSource[];
+  const incomeSources = activeSources.map(({ id, name }) => ({ id, name }));
+  const freelanceSources = activeSources.filter(
+    (source) => source.category === "freelance"
+  );
   const upcomingLogs = (upcomingResult.data ?? []) as unknown as WorkLog[];
 
   return (

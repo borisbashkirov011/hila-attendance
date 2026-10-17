@@ -45,6 +45,8 @@ const NAV_LINKS = [
 export default function NavBar() {
   const pathname = usePathname();
 
+  if (pathname === "/login") return null;
+
   return (
     <header className="fixed bottom-0 z-30 w-full border-t border-gray-200/50 bg-white/80 backdrop-blur-md md:sticky md:top-0 md:bottom-auto md:border-t-0 md:border-b md:border-gray-200/70">
       <nav className="mx-auto flex max-w-5xl items-center justify-around px-2 py-1.5 md:justify-between md:px-8 md:py-3">
