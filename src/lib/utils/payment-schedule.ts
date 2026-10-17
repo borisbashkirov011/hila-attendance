@@ -10,13 +10,19 @@ export type ScheduleLog = {
   tax_pension_amount: number;
   expected_payment_date: string;
   created_at?: string | null;
-  income_sources: { category: string; standard_hours: number | null } | null;
+  income_sources: {
+    name?: string;
+    category: string;
+    standard_hours: number | null;
+  } | null;
 };
 
 export type QuotaOverride = { source_id: string; month: string; hours: number };
 
 export type PaymentEntry = {
   paymentDate: string; // 'YYYY-MM-DD'
+  sourceId: string;
+  sourceName: string;
   category: string;
   hours: number;
   gross: number;
@@ -72,6 +78,10 @@ export function buildPaymentEntries(
       const net = Number(log.net_amount);
       const taxPension = Number(log.tax_pension_amount);
       const category = log.income_sources?.category ?? "employee";
+      const source = {
+        sourceId: log.source_id,
+        sourceName: log.income_sources?.name ?? "מקור לא ידוע",
+      };
 
       const regularHours = hours > 0 ? Math.min(hours, Math.max(remaining, 0)) : 0;
       const overflowHours = hours > 0 ? hours - regularHours : 0;
@@ -83,6 +93,7 @@ export function buildPaymentEntries(
       if (regularShare > 0) {
         entries.push({
           paymentDate: log.expected_payment_date,
+          ...source,
           category,
           hours: hours > 0 ? regularHours : 0,
           gross: gross * regularShare,
@@ -94,6 +105,7 @@ export function buildPaymentEntries(
       if (overflowShare > 0) {
         entries.push({
           paymentDate: toDateOnlyString(addMonthsClamped(log.expected_payment_date, 1)),
+          ...source,
           category,
           hours: overflowHours,
           gross: gross * overflowShare,
