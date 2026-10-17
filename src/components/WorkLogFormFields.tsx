@@ -1,14 +1,20 @@
-type IncomeSourceOption = {
-  id: string;
-  name: string;
-};
+"use client";
+
+import { useState } from "react";
+import type { IncomeSourceOption } from "@/lib/types/income-source";
 
 export type WorkLogFormDefaults = {
   sourceId?: string;
   workDate?: string;
   hoursWorked?: number | null;
   grossAmount?: number | null;
+  paymentDate?: string | null;
+  description?: string | null;
 };
+
+const inputClassName =
+  "h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20";
+const labelClassName = "text-sm font-medium text-zinc-700 dark:text-zinc-300";
 
 export default function WorkLogFormFields({
   incomeSources,
@@ -19,21 +25,23 @@ export default function WorkLogFormFields({
   defaults?: WorkLogFormDefaults;
   idPrefix?: string;
 }) {
+  const [sourceId, setSourceId] = useState(defaults?.sourceId ?? "");
+  const isManual =
+    incomeSources.find((source) => source.id === sourceId)?.payment_mode === "manual";
+
   return (
     <>
       <div className="flex flex-col gap-1">
-        <label
-          htmlFor={`${idPrefix}source_id`}
-          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
+        <label htmlFor={`${idPrefix}source_id`} className={labelClassName}>
           מקור הכנסה
         </label>
         <select
           id={`${idPrefix}source_id`}
           name="source_id"
           required
-          defaultValue={defaults?.sourceId ?? ""}
-          className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
+          value={sourceId}
+          onChange={(event) => setSourceId(event.target.value)}
+          className={inputClassName}
         >
           <option value="" disabled>
             בחרו מקור הכנסה
@@ -47,10 +55,7 @@ export default function WorkLogFormFields({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label
-          htmlFor={`${idPrefix}work_date`}
-          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
+        <label htmlFor={`${idPrefix}work_date`} className={labelClassName}>
           תאריך
         </label>
         <input
@@ -59,16 +64,44 @@ export default function WorkLogFormFields({
           type="date"
           required
           defaultValue={defaults?.workDate}
-          className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
+          className={inputClassName}
         />
       </div>
 
+      {isManual && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`${idPrefix}payment_date`} className={labelClassName}>
+              תאריך תשלום
+            </label>
+            <input
+              id={`${idPrefix}payment_date`}
+              name="payment_date"
+              type="date"
+              required
+              defaultValue={defaults?.paymentDate ?? undefined}
+              className={inputClassName}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`${idPrefix}description`} className={labelClassName}>
+              תיאור
+            </label>
+            <input
+              id={`${idPrefix}description`}
+              name="description"
+              type="text"
+              placeholder="לדוגמה: UGC בריטה"
+              defaultValue={defaults?.description ?? undefined}
+              className={inputClassName}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor={`${idPrefix}hours_worked`}
-            className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-          >
+          <label htmlFor={`${idPrefix}hours_worked`} className={labelClassName}>
             שעות עבודה
           </label>
           <input
@@ -79,14 +112,11 @@ export default function WorkLogFormFields({
             min="0"
             placeholder="לדוגמה: 3.5"
             defaultValue={defaults?.hoursWorked ?? undefined}
-            className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
+            className={inputClassName}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor={`${idPrefix}gross_amount`}
-            className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-          >
+          <label htmlFor={`${idPrefix}gross_amount`} className={labelClassName}>
             סכום ברוטו
           </label>
           <input
@@ -95,15 +125,18 @@ export default function WorkLogFormFields({
             type="number"
             step="0.01"
             min="0"
-            placeholder="לפי תעריף שעתי"
+            required={isManual}
+            placeholder={isManual ? "₪" : "לפי תעריף שעתי"}
             defaultValue={defaults?.grossAmount ?? undefined}
-            className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
+            className={inputClassName}
           />
         </div>
       </div>
 
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        יש להזין שעות עבודה או סכום ברוטו (או את שניהם).
+        {isManual
+          ? "עבודה חד-פעמית: יש להזין סכום ותאריך תשלום."
+          : "יש להזין שעות עבודה או סכום ברוטו (או את שניהם)."}
       </p>
     </>
   );

@@ -24,7 +24,15 @@ Next.js 16 (App Router, `src/proxy.ts` instead of middleware) + React 19 + TS st
 - Reads: `src/lib/data/{receipts,expenses}.ts` (React `cache`, not server actions).
 - Utils: `payment-dates.ts` (day clamped to month length), `format.ts` (`formatCurrency` used everywhere for ₪).
 
-## Done this session
+## Session 2026-10-17 (b): standard hours + one-off jobs
+- **Migration required**: run `supabase/migrations/20261017_hour_quotas_and_manual_payments.sql` (adds `standard_hours`, `source_hour_quotas`, `work_logs.description`, `manual` payment_mode, seeds UGC jobs סופר פארם 550 @15.10 / קריאייטורס 400 @15.12).
+- Quota split: `src/lib/utils/payment-schedule.ts` — per source+work-month, hours within quota → `expected_payment_date`, excess → +1 month. Dashboard + `/taxes` use `getPaymentEntries`. Verified on Sep(17/34)/Oct(40/55) example.
+- Settings: "שעות תקן חודשיות" field per source + "תקן לפי חודש" modal (`HourQuotaModal`, `src/lib/actions/hour-quotas.ts`).
+- `/schedule`: per-source "X/Y שעות תקן" pill.
+- Manual-payment sources: log form shows payment date + description fields.
+- Premium (פרמיה, from 2027, ≤1300/month, שוטף+60): NOT built — rules TBD by user.
+
+## Done previous session
 - Passcode login (1412) + token-protected calendar feed.
 - Fixes: receipt edit now saves new file (old file removed); expenses filtered to current year; dashboard shift modal closes on save; payment day 29–31 no longer overflows; `/taxes` actual income no longer misses cross-year receipts.
 - Removed orphans `QuickAddModal`, `IncomeSummaryCards`; modals show inline errors instead of `alert`.

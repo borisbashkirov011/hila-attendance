@@ -5,7 +5,9 @@ import UpcomingShifts from "@/components/UpcomingShifts";
 import DashboardQuickActions from "@/components/DashboardQuickActions";
 import IncomeSummaryWidget from "@/components/IncomeSummaryWidget";
 import type { WorkLog } from "@/lib/types/work-log";
-import type { IncomeSource } from "@/lib/types/income-source";
+import { INCOME_SOURCE_COLUMNS, type IncomeSource } from "@/lib/types/income-source";
+import { getPaymentEntries } from "@/lib/data/payment-schedule";
+import type { PaymentEntry } from "@/lib/utils/payment-schedule";
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -22,24 +24,16 @@ function monthLabel(date: Date): string {
   }).format(date);
 }
 
-type MonthTotalsRow = {
-  gross_amount: number;
-  net_amount: number;
-  tax_pension_amount: number;
-  hours_worked: number | null;
-  income_sources: { category: string } | null;
-};
-
-function sumMonthTotals(rows: MonthTotalsRow[]) {
-  const totals = rows.reduce(
-    (acc, row) => {
-      const gross = Number(row.gross_amount);
-      const isEmployee = row.income_sources?.category === "employee";
+function sumMonthTotals(entries: PaymentEntry[]) {
+  const totals = entries.reduce(
+    (acc, entry) => {
+      const gross = entry.gross;
+      const isEmployee = entry.category === "employee";
       return {
         gross: acc.gross + gross,
-        net: acc.net + Number(row.net_amount),
-        taxPension: acc.taxPension + Number(row.tax_pension_amount),
-        hours: acc.hours + Number(row.hours_worked ?? 0),
+        net: acc.net + entry.net,
+        taxPension: acc.taxPension + entry.taxPension,
+        hours: acc.hours + entry.hours,
         employeeGross: acc.employeeGross + (isEmployee ? gross : 0),
         freelanceGross: acc.freelanceGross + (isEmployee ? 0 : gross),
       };
@@ -81,33 +75,18 @@ export default async function DashboardPage() {
   const nextMonthStart = toDateOnlyString(startOfMonth(nextMonthDate));
   const nextMonthEnd = toDateOnlyString(endOfMonth(nextMonthDate));
 
-  const [sourcesResult, currentMonthResult, nextMonthResult, upcomingResult] =
+  const [sourcesResult, paymentEntries, upcomingResult] =
     await Promise.all([
       supabase
         .from("income_sources")
-        .select(
-          "id, name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active"
-        )
+        .select(INCOME_SOURCE_COLUMNS)
         .eq("is_active", true)
         .order("name"),
+      getPaymentEntries(currentMonthStart, nextMonthEnd),
       supabase
         .from("work_logs")
         .select(
-          "gross_amount, net_amount, tax_pension_amount, hours_worked, income_sources(category)"
-        )
-        .gte("expected_payment_date", currentMonthStart)
-        .lte("expected_payment_date", currentMonthEnd),
-      supabase
-        .from("work_logs")
-        .select(
-          "gross_amount, net_amount, tax_pension_amount, hours_worked, income_sources(category)"
-        )
-        .gte("expected_payment_date", nextMonthStart)
-        .lte("expected_payment_date", nextMonthEnd),
-      supabase
-        .from("work_logs")
-        .select(
-          "id, source_id, work_date, hours_worked, gross_amount, net_amount, status, income_sources(name)"
+          "id, source_id, work_date, description, hours_worked, gross_amount, net_amount, expected_payment_date, status, income_sources(name)"
         )
         .gte("work_date", today)
         .order("work_date", { ascending: true })
@@ -115,7 +94,11 @@ export default async function DashboardPage() {
     ]);
 
   const activeSources = (sourcesResult.data ?? []) as IncomeSource[];
-  const incomeSources = activeSources.map(({ id, name }) => ({ id, name }));
+  const incomeSources = activeSources.map(({ id, name, payment_mode }) => ({
+    id,
+    name,
+    payment_mode,
+  }));
   const freelanceSources = activeSources.filter(
     (source) => source.category === "freelance"
   );
@@ -138,13 +121,13 @@ export default async function DashboardPage() {
         current={{
           label: monthLabel(now),
           ...sumMonthTotals(
-            (currentMonthResult.data ?? []) as unknown as MonthTotalsRow[]
+            paymentEntries.filter((e) => e.paymentDate <= currentMonthEnd)
           ),
         }}
         next={{
           label: monthLabel(nextMonthDate),
           ...sumMonthTotals(
-            (nextMonthResult.data ?? []) as unknown as MonthTotalsRow[]
+            paymentEntries.filter((e) => e.paymentDate >= nextMonthStart)
           ),
         }}
       />

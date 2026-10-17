@@ -7,7 +7,8 @@ import {
 } from "@/lib/actions/income-sources";
 import { paymentTimingLabel } from "@/lib/utils/payment-terms";
 import IncomeSourceFormModal from "@/components/IncomeSourceFormModal";
-import type { IncomeSource } from "@/lib/types/income-source";
+import HourQuotaModal from "@/components/HourQuotaModal";
+import type { HourQuotaOverride, IncomeSource } from "@/lib/types/income-source";
 
 const CATEGORY_LABELS: Record<string, string> = {
   employee: "שכירה",
@@ -20,10 +21,14 @@ function paymentTermLabel(source: IncomeSource): string {
 
 export default function IncomeSourceManager({
   incomeSources,
+  quotaOverrides,
 }: {
   incomeSources: IncomeSource[];
+  quotaOverrides: HourQuotaOverride[];
 }) {
   const [modalSource, setModalSource] = useState<IncomeSource | null>(null);
+  const [quotaSourceId, setQuotaSourceId] = useState<string | null>(null);
+  const quotaSource = incomeSources.find((source) => source.id === quotaSourceId) ?? null;
   const [isAdding, setIsAdding] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -92,6 +97,8 @@ export default function IncomeSourceManager({
                 {paymentTermLabel(source)}
                 {source.default_hourly_rate !== null &&
                   ` · ₪${source.default_hourly_rate}`}
+                {source.standard_hours !== null &&
+                  ` · תקן ${source.standard_hours} ש׳`}
               </p>
             </div>
 
@@ -105,6 +112,15 @@ export default function IncomeSourceManager({
                   >
                     עריכה
                   </button>
+                  {source.standard_hours !== null && (
+                    <button
+                      type="button"
+                      onClick={() => setQuotaSourceId(source.id)}
+                      className="flex h-9 items-center justify-center rounded-md border border-black/10 px-3 text-sm font-medium text-zinc-700 dark:border-white/20 dark:text-zinc-300"
+                    >
+                      תקן לפי חודש
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={isPending && pendingId === source.id}
@@ -131,6 +147,13 @@ export default function IncomeSourceManager({
 
       {isAdding && (
         <IncomeSourceFormModal source={null} onClose={() => setIsAdding(false)} />
+      )}
+      {quotaSource && (
+        <HourQuotaModal
+          source={quotaSource}
+          overrides={quotaOverrides.filter((o) => o.source_id === quotaSource.id)}
+          onClose={() => setQuotaSourceId(null)}
+        />
       )}
       {modalSource && (
         <IncomeSourceFormModal

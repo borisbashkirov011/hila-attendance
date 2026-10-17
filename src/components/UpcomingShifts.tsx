@@ -30,6 +30,7 @@ export default function UpcomingShifts({ logs }: { logs: WorkLog[] }) {
               <div>
                 <p className="font-medium text-slate-800">
                   {log.income_sources?.name ?? "מקור לא ידוע"}
+                  {log.description ? ` · ${log.description}` : ""}
                 </p>
                 <p className="text-slate-400">{formatDate(log.work_date)}</p>
               </div>

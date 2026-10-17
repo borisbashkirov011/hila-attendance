@@ -36,6 +36,7 @@ function foldLine(line: string): string {
 type FeedRow = {
   id: string;
   work_date: string;
+  description: string | null;
   hours_worked: number | null;
   gross_amount: number;
   net_amount: number;
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("work_logs")
     .select(
-      "id, work_date, hours_worked, gross_amount, net_amount, status, income_sources(name)"
+      "id, work_date, description, hours_worked, gross_amount, net_amount, status, income_sources(name)"
     )
     .order("work_date", { ascending: true });
 
@@ -73,7 +74,9 @@ export async function GET(request: Request) {
   ).padStart(2, "0")}${String(now.getUTCSeconds()).padStart(2, "0")}Z`;
 
   const events = logs.map((log) => {
-    const summary = escapeIcsText(log.income_sources?.name ?? "משמרת");
+    const summary = escapeIcsText(
+      [log.income_sources?.name ?? "משמרת", log.description].filter(Boolean).join(" · ")
+    );
     const descriptionParts = [
       `נטו: ${formatCurrency(Number(log.net_amount))}`,
       `ברוטו: ${formatCurrency(Number(log.gross_amount))}`,

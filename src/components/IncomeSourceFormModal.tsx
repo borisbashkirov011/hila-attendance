@@ -65,6 +65,7 @@ export default function IncomeSourceFormModal({
                     name: source.name,
                     category: source.category,
                     defaultHourlyRate: source.default_hourly_rate,
+                    standardHours: source.standard_hours,
                     ...(() => {
                       const { timing, day } = paymentTimingFor(
                         source.payment_mode,

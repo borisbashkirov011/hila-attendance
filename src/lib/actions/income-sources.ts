@@ -21,6 +21,7 @@ type ParsedIncomeSourceInput = {
   default_hourly_rate: number | null;
   payment_mode: PaymentMode;
   payment_offset_days: number | null;
+  standard_hours: number | null;
 };
 
 function parseIncomeSourceFormData(
@@ -31,6 +32,7 @@ function parseIncomeSourceFormData(
   const rateRaw = formData.get("default_hourly_rate");
   const timing = formData.get("payment_timing");
   const dayRaw = formData.get("payment_day");
+  const standardHoursRaw = formData.get("standard_hours");
 
   if (typeof name !== "string" || !name.trim()) {
     return { error: "יש להזין שם מקור הכנסה." };
@@ -38,15 +40,20 @@ function parseIncomeSourceFormData(
   if (category !== "employee" && category !== "freelance") {
     return { error: "יש לבחור סוג העסקה תקין." };
   }
-  if (timing !== "immediate" && timing !== "next_month" && timing !== "two_months") {
+  if (
+    timing !== "immediate" &&
+    timing !== "next_month" &&
+    timing !== "two_months" &&
+    timing !== "manual"
+  ) {
     return { error: "יש לבחור מועד תשלום תקין." };
   }
 
   let paymentMode: PaymentMode;
   let paymentOffsetDays: number;
 
-  if (timing === "immediate") {
-    paymentMode = "immediate";
+  if (timing === "immediate" || timing === "manual") {
+    paymentMode = timing;
     paymentOffsetDays = 0;
   } else {
     const day = typeof dayRaw === "string" && dayRaw !== "" ? Number(dayRaw) : NaN;
@@ -65,6 +72,14 @@ function parseIncomeSourceFormData(
     }
   }
 
+  let standardHours: number | null = null;
+  if (typeof standardHoursRaw === "string" && standardHoursRaw !== "") {
+    standardHours = Number(standardHoursRaw);
+    if (!Number.isFinite(standardHours) || standardHours < 0) {
+      return { error: "יש להזין שעות תקן תקינות." };
+    }
+  }
+
   return {
     data: {
       name: name.trim(),
@@ -72,6 +87,7 @@ function parseIncomeSourceFormData(
       default_hourly_rate: rate,
       payment_mode: paymentMode,
       payment_offset_days: paymentOffsetDays,
+      standard_hours: standardHours,
     },
   };
 }

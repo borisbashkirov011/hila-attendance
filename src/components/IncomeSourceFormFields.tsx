@@ -9,6 +9,7 @@ export type IncomeSourceFormDefaults = {
   defaultHourlyRate?: number | null;
   paymentTiming?: PaymentTiming;
   paymentDay?: number | null;
+  standardHours?: number | null;
 };
 
 export default function IncomeSourceFormFields({
@@ -21,7 +22,7 @@ export default function IncomeSourceFormFields({
   const [timing, setTiming] = useState<PaymentTiming>(
     defaults?.paymentTiming ?? "immediate"
   );
-  const isImmediate = timing === "immediate";
+  const hasNoDay = timing === "immediate" || timing === "manual";
 
   return (
     <>
@@ -121,12 +122,35 @@ export default function IncomeSourceFormFields({
             type="number"
             min="1"
             max="31"
-            required={!isImmediate}
-            disabled={isImmediate}
+            required={!hasNoDay}
+            disabled={hasNoDay}
             defaultValue={defaults?.paymentDay ?? ""}
             className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base disabled:opacity-50 dark:border-white/20"
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor={`${idPrefix}standard_hours`}
+          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          שעות תקן חודשיות (אופציונלי)
+        </label>
+        <input
+          id={`${idPrefix}standard_hours`}
+          name="standard_hours"
+          type="number"
+          step="0.25"
+          min="0"
+          defaultValue={defaults?.standardHours ?? ""}
+          placeholder="לדוגמה: 40"
+          className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
+        />
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          שעות מעבר לתקן ישולמו חודש אחרי מועד התשלום הרגיל. אפשר לשנות לחודש מסוים
+          דרך &quot;תקן לפי חודש&quot;.
+        </p>
       </div>
     </>
   );

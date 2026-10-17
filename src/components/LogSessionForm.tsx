@@ -9,11 +9,7 @@ import {
 } from "@/lib/actions/work-logs";
 import WorkLogFormFields from "@/components/WorkLogFormFields";
 import type { WorkLog } from "@/lib/types/work-log";
-
-type IncomeSourceOption = {
-  id: string;
-  name: string;
-};
+import type { IncomeSourceOption } from "@/lib/types/income-source";
 
 const initialState: WorkLogFormState = { status: "idle" };
 
@@ -78,6 +74,8 @@ export default function LogSessionForm({
                 workDate: existingLog!.work_date,
                 hoursWorked: existingLog!.hours_worked,
                 grossAmount: existingLog!.gross_amount,
+                paymentDate: existingLog!.expected_payment_date,
+                description: existingLog!.description,
               }
             : { workDate: defaultWorkDate ?? today }
         }

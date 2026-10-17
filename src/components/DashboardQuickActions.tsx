@@ -6,12 +6,8 @@ import LogSessionForm from "@/components/LogSessionForm";
 import AddReceiptModal from "@/components/AddReceiptModal";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import { toDateOnlyString } from "@/lib/utils/payment-dates";
-import type { IncomeSource } from "@/lib/types/income-source";
+import type { IncomeSource, IncomeSourceOption } from "@/lib/types/income-source";
 
-type IncomeSourceOption = {
-  id: string;
-  name: string;
-};
 
 export default function DashboardQuickActions({
   incomeSources,
