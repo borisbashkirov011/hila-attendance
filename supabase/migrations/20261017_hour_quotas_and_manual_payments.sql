@@ -1,4 +1,4 @@
--- Run once in Supabase → SQL Editor.
+-- Run in Supabase → SQL Editor, in two separate runs (see note below).
 
 -- 1. Default monthly standard hours (תקן) per income source.
 alter table income_sources
@@ -18,22 +18,11 @@ create table if not exists source_hour_quotas (
 alter table work_logs
   add column if not exists description text;
 
-do $$
-declare c record;
-begin
-  for c in
-    select conname from pg_constraint
-    where conrelid = 'income_sources'::regclass
-      and contype = 'c'
-      and pg_get_constraintdef(oid) ilike '%payment_mode%'
-  loop
-    execute format('alter table income_sources drop constraint %I', c.conname);
-  end loop;
-end $$;
+-- payment_mode is a Postgres enum (payment_mode_type).
+alter type payment_mode_type add value if not exists 'manual';
 
-alter table income_sources
-  add constraint income_sources_payment_mode_check
-  check (payment_mode in ('immediate', 'specific_day', 'eom_plus_days', 'manual'));
+-- ⚠️ Run everything above first. A new enum value can't be used in the same
+-- transaction, so run the seed below as a separate query.
 
 -- 4. Seed the two known UGC jobs (idempotent).
 insert into income_sources (name, category, payment_mode, payment_offset_days, default_hourly_rate, tax_pension_rate, is_active)
