@@ -8,6 +8,7 @@ import {
   type HourQuotaFormState,
 } from "@/lib/actions/hour-quotas";
 import type { HourQuotaOverride, IncomeSource } from "@/lib/types/income-source";
+import MonthPicker from "@/components/MonthPicker";
 
 const initialState: HourQuotaFormState = { status: "idle" };
 
@@ -89,14 +90,8 @@ export default function HourQuotaModal({
 
         <form action={formAction} className="flex flex-col gap-3">
           <input type="hidden" name="source_id" value={source.id} />
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              name="month"
-              type="month"
-              required
-              aria-label="חודש"
-              className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
-            />
+          <MonthPicker name="month" />
+          <div>
             <input
               name="hours"
               type="number"
@@ -104,7 +99,7 @@ export default function HourQuotaModal({
               min="0"
               required
               placeholder="שעות תקן"
-              className="h-11 rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
+              className="h-11 w-full rounded-md border border-black/10 bg-transparent px-3 text-base dark:border-white/20"
             />
           </div>
           {state.status === "error" && (
