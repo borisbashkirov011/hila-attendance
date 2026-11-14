@@ -12,6 +12,7 @@ Next.js 16 (App Router, `src/proxy.ts` instead of middleware) + React 19 + TS st
 - Passcode gate: `src/proxy.ts` redirects to `/login` unless cookie `hila_auth` == SHA-256(`passcode:AUTH_SECRET`). Passcode = env `APP_PASSCODE` (fallback `1412`); `AUTH_SECRET` env optional (fallback constant). Changing either logs everyone out.
 - `/login` (`LoginForm` + `loginAction`, 1s delay on wrong code). Logout button on `/settings`.
 - `/api/calendar/feed?token=<same token>` — 401 without it. Settings page builds the URL server-side. Old iPhone subscriptions (no token) must be re-added.
+- `/api/dashboard-summary` — read-only JSON for Hila's dashboard (month totals, hours vs quota, osek patur, next 14 days shifts, overdue pending payments). Requires `Authorization: Bearer $DASHBOARD_TOKEN`; 401 if env unset.
 
 ## Routes
 - `/` dashboard: `IncomeSummaryWidget` (osek patur bar), `FinancialSummaryCards` (by `expected_payment_date`), `UpcomingShifts`, `DashboardQuickActions` (shift/receipt/expense FABs). Single `income_sources` query.
