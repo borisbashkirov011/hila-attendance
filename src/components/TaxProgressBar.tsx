@@ -1,6 +1,6 @@
 import { formatCurrency } from "@/lib/utils/format";
 
-const OSEK_PATUR_LIMIT = 120000;
+export const OSEK_PATUR_LIMIT = 120000;
 
 export default function TaxProgressBar({ currentTotal }: { currentTotal: number }) {
   const percentage = Math.min((currentTotal / OSEK_PATUR_LIMIT) * 100, 100);

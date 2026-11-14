@@ -12,7 +12,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except the login page, the token-protected calendar feed and static assets.
-    "/((?!login|api/calendar/feed|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Everything except the login page, the token-protected calendar feed, the dashboard summary and static assets.
+    "/((?!login|api/calendar/feed|api/dashboard-summary|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
